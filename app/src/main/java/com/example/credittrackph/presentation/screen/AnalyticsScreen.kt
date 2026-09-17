@@ -1,5 +1,8 @@
 package com.example.credittrackph.presentation.screen
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -25,16 +28,16 @@ import java.util.Calendar
 
 private val CategoryColors = listOf(
     Color(0xFFFF5252), // Red
-    Color(0xFF448AFF), // Blue
-    Color(0xFFFFB74D), // Orange
-    Color(0xFF66BB6A), // Green
+    Color(0xFF38BDF8), // Sky Blue
+    Color(0xFFFFB74D), // Amber / Orange
+    Color(0xFF10B981), // Emerald
     Color(0xFFAB47BC), // Purple
     Color(0xFF26C6DA), // Cyan
     Color(0xFFFF7043), // Deep Orange
     Color(0xFF8D6E63), // Brown
     Color(0xFFEC407A), // Pink
-    Color(0xFF7E57C2), // Indigo
-    Color(0xFF78909C)  // Blue Grey
+    Color(0xFF818CF8), // Indigo
+    Color(0xFF94A3B8)  // Slate
 )
 
 data class CategoryStat(
@@ -77,14 +80,23 @@ fun AnalyticsScreen(
 
     val topStat: CategoryStat? = categoryTotals.firstOrNull()
 
+    // Smooth one-time entrance animation on open
+    val animProgress = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        animProgress.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = 900, easing = FastOutSlowInEasing)
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Surface950)
+            .background(appBackgroundColor())
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // ── Header (tab-style, no back button) ──
+        // ── Header ──
         Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
             Text(
                 "CREDITTRACK PH",
@@ -95,7 +107,7 @@ fun AnalyticsScreen(
             )
             Text(
                 "Statistics",
-                color = Color.White,
+                color = appTextColor(),
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -121,7 +133,7 @@ fun AnalyticsScreen(
 
         // ── Summary Card ──
         Card(
-            colors = CardDefaults.cardColors(containerColor = Surface800),
+            colors = CardDefaults.cardColors(containerColor = appCardColor()),
             shape = RoundedCornerShape(16.dp),
             modifier = Modifier
                 .fillMaxWidth()
@@ -131,13 +143,13 @@ fun AnalyticsScreen(
                 Text(
                     text = "Total Tracked Spend",
                     style = MaterialTheme.typography.labelMedium,
-                    color = Color.White.copy(alpha = 0.6f)
+                    color = appTextSubColor()
                 )
                 Text(
-                    text = "₱%,.2f".format(totalSpend),
+                    text = "₱%,.2f".format(totalSpend * animProgress.value),
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = appTextColor()
                 )
                 if (topStat != null) {
                     Spacer(modifier = Modifier.height(12.dp))
@@ -161,13 +173,13 @@ fun AnalyticsScreen(
                 Text(
                     text = "No expenses recorded yet.\nAdd expenses to view category statistics.",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(0.5f)
+                    color = appTextSubColor()
                 )
             }
         } else {
             // ── Donut Chart ──
             Card(
-                colors = CardDefaults.cardColors(containerColor = Surface800),
+                colors = CardDefaults.cardColors(containerColor = appCardColor()),
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -181,7 +193,7 @@ fun AnalyticsScreen(
                         text = "Category Breakdown",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White,
+                        color = appTextColor(),
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -194,7 +206,8 @@ fun AnalyticsScreen(
                         Canvas(modifier = Modifier.fillMaxSize()) {
                             var startAngle = -90f
                             categoryTotals.forEachIndexed { index, stat ->
-                                val sweepAngle = ((stat.totalAmount / totalSpend) * 360f).toFloat()
+                                val fullSweep = ((stat.totalAmount / totalSpend) * 360f).toFloat()
+                                val sweepAngle = fullSweep * animProgress.value
                                 val color = CategoryColors[index % CategoryColors.size]
 
                                 drawArc(
@@ -202,7 +215,7 @@ fun AnalyticsScreen(
                                     startAngle = startAngle,
                                     sweepAngle = sweepAngle,
                                     useCenter = false,
-                                    style = Stroke(width = 36.dp.toPx())
+                                    style = Stroke(width = 34.dp.toPx())
                                 )
                                 startAngle += sweepAngle
                             }
@@ -213,50 +226,64 @@ fun AnalyticsScreen(
                                 text = "${categoryTotals.size}",
                                 style = MaterialTheme.typography.headlineMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                color = appTextColor()
                             )
                             Text(
                                 text = "Categories",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = Color.White.copy(0.6f)
+                                color = appTextSubColor()
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
 
-                    // ── Legend ──
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // ── Legend & Progress Bars ──
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         categoryTotals.forEachIndexed { index, stat ->
                             val percentage = (stat.totalAmount / totalSpend) * 100
                             val color = CategoryColors[index % CategoryColors.size]
 
-                            Row(
+                            Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(Surface900, RoundedCornerShape(10.dp))
+                                    .background(appSurfaceColor(), RoundedCornerShape(10.dp))
                                     .padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
-                                Box(
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(12.dp)
+                                            .clip(CircleShape)
+                                            .background(color)
+                                    )
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Text(
+                                        text = "${stat.category.emoji} ${stat.category.displayName}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = appTextColor(),
+                                        fontWeight = FontWeight.Medium,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Text(
+                                        text = "₱%,.2f (%.1f%%)".format(stat.totalAmount, percentage),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Emerald400,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                LinearProgressIndicator(
+                                    progress = { ((percentage.toFloat() / 100f) * animProgress.value).coerceIn(0f, 1f) },
                                     modifier = Modifier
-                                        .size(12.dp)
-                                        .clip(CircleShape)
-                                        .background(color)
-                                )
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Text(
-                                    text = "${stat.category.emoji} ${stat.category.displayName}",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Medium,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                Text(
-                                    text = "₱%,.2f (%.1f%%)".format(stat.totalAmount, percentage),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Emerald400,
-                                    fontWeight = FontWeight.Bold
+                                        .fillMaxWidth()
+                                        .height(4.dp)
+                                        .clip(RoundedCornerShape(2.dp)),
+                                    color = color,
+                                    trackColor = appBackgroundColor()
                                 )
                             }
                         }
@@ -265,6 +292,6 @@ fun AnalyticsScreen(
             }
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(80.dp))
     }
 }

@@ -49,19 +49,27 @@ fun CardDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(card.label, color = Color.White, fontWeight = FontWeight.Bold) },
+                title = {
+                    Text(
+                        card.label,
+                        color = appTextColor(),
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, null, tint = Color.White) }
+                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, null, tint = appTextColor()) }
                 },
                 actions = {
                     IconButton(onClick = onAddExpense) {
                         Icon(Icons.Default.Add, "Add Expense", tint = Emerald400)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Surface900)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = appCardColor())
             )
         },
-        containerColor = Surface950
+        containerColor = appBackgroundColor()
     ) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
@@ -78,17 +86,17 @@ fun CardDetailScreen(
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                    colors = CardDefaults.cardColors(containerColor = Surface800),
+                    colors = CardDefaults.cardColors(containerColor = appCardColor()),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Column {
-                            Text("Outstanding Balance", color = Color.White.copy(0.6f), fontSize = 12.sp)
+                            Text("Outstanding Balance", color = appTextSubColor(), fontSize = 12.sp)
                             Text("₱${String.format("%,.2f", outstanding)}", color = RedAlert, fontWeight = FontWeight.Bold, fontSize = 22.sp)
                         }
                         Column(horizontalAlignment = Alignment.End) {
-                            Text("Due Day", color = Color.White.copy(0.6f), fontSize = 12.sp)
-                            Text("Day ${card.dueDay}", color = Color.White, fontWeight = FontWeight.Medium)
+                            Text("Due Day", color = appTextSubColor(), fontSize = 12.sp)
+                            Text("Day ${card.dueDay}", color = appTextColor(), fontWeight = FontWeight.Medium)
                         }
                     }
                 }
@@ -97,7 +105,7 @@ fun CardDetailScreen(
             // Month/Year Filter
             item {
                 Spacer(Modifier.height(16.dp))
-                Text("Filter by Period", color = Color.White.copy(0.6f), fontSize = 12.sp, modifier = Modifier.padding(horizontal = 20.dp))
+                Text("Filter by Period", color = appTextSubColor(), fontSize = 12.sp, modifier = Modifier.padding(horizontal = 20.dp))
                 Spacer(Modifier.height(8.dp))
                 // Year chips
                 Row(
@@ -146,8 +154,8 @@ fun CardDetailScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Expenses (${expenses.size})", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                    Text("Sorted by due date ↑", color = Color.White.copy(0.4f), fontSize = 11.sp)
+                    Text("Expenses (${expenses.size})", color = appTextColor(), fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Text("Sorted by due date ↑", color = appTextSubColor(), fontSize = 11.sp)
                 }
                 Spacer(Modifier.height(8.dp))
             }
@@ -158,8 +166,8 @@ fun CardDetailScreen(
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text("📊", fontSize = 48.sp)
                             Spacer(Modifier.height(12.dp))
-                            Text("No expenses yet", color = Color.White, fontWeight = FontWeight.Bold)
-                            Text("Tap + above to add an expense", color = Color.White.copy(0.5f), fontSize = 13.sp)
+                            Text("No expenses yet", color = appTextColor(), fontWeight = FontWeight.Bold)
+                            Text("Tap + above to add an expense", color = appTextSubColor(), fontSize = 13.sp)
                         }
                     }
                 }
@@ -188,7 +196,7 @@ fun ExpenseRow(expense: ExpenseEntity, onMarkPaid: () -> Unit, onDelete: () -> U
 
     Card(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = if (expense.isPaid) Surface800.copy(alpha = 0.5f) else Surface800),
+        colors = CardDefaults.cardColors(containerColor = if (expense.isPaid) appCardColor().copy(alpha = 0.5f) else appCardColor()),
         shape = RoundedCornerShape(10.dp)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -204,8 +212,21 @@ fun ExpenseRow(expense: ExpenseEntity, onMarkPaid: () -> Unit, onDelete: () -> U
 
                 // Main info
                 Column(Modifier.weight(1f)) {
-                    Text(expense.merchantName, color = if (expense.isPaid) Color.White.copy(0.5f) else Color.White, fontWeight = FontWeight.Medium, fontSize = 14.sp)
-                    Text(expense.category.displayName, color = Color.White.copy(0.4f), fontSize = 11.sp)
+                    Text(
+                        expense.merchantName,
+                        color = if (expense.isPaid) appTextColor().copy(0.5f) else appTextColor(),
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 14.sp,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                    Text(
+                        expense.category.displayName,
+                        color = appTextSubColor(),
+                        fontSize = 11.sp,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
                     if (expense.isInstallment) {
                         val interestLabel = when (expense.interestType) {
                             InterestType.ZERO_PERCENT -> "0% Promo"
@@ -233,7 +254,7 @@ fun ExpenseRow(expense: ExpenseEntity, onMarkPaid: () -> Unit, onDelete: () -> U
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
                         "₱${String.format("%,.2f", expense.monthlyAmortization)}",
-                        color = if (expense.isPaid) Color.White.copy(0.4f) else statusColor,
+                        color = if (expense.isPaid) appTextColor().copy(0.4f) else statusColor,
                         fontWeight = FontWeight.Bold, fontSize = 15.sp
                     )
                     if (!expense.isPaid) {
@@ -247,9 +268,9 @@ fun ExpenseRow(expense: ExpenseEntity, onMarkPaid: () -> Unit, onDelete: () -> U
 
                     Box {
                         IconButton(onClick = { showMenu = true }, modifier = Modifier.size(24.dp)) {
-                            Icon(Icons.Default.MoreVert, null, tint = Color.White.copy(0.5f), modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.MoreVert, null, tint = appTextSubColor(), modifier = Modifier.size(16.dp))
                         }
-                        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }, modifier = Modifier.background(Surface800)) {
+                        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }, modifier = Modifier.background(appCardColor())) {
                             if (!expense.isPaid) {
                                 DropdownMenuItem(
                                     text = { Text("✓ Mark as Paid", color = GreenSuccess) },
@@ -270,12 +291,12 @@ fun ExpenseRow(expense: ExpenseEntity, onMarkPaid: () -> Unit, onDelete: () -> U
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Surface900)
+                        .background(appSurfaceColor())
                         .padding(12.dp)
                 ) {
                     Text(
                         text = "Installment Details & Schedule",
-                        color = Color.White,
+                        color = appTextColor(),
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp
                     )
@@ -285,15 +306,15 @@ fun ExpenseRow(expense: ExpenseEntity, onMarkPaid: () -> Unit, onDelete: () -> U
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Original Total Purchase:", color = Color.White.copy(0.6f), fontSize = 11.sp)
-                        Text("₱%,.2f".format(expense.amount), color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text("Original Total Purchase:", color = appTextSubColor(), fontSize = 11.sp)
+                        Text("₱%,.2f".format(expense.amount), color = appTextColor(), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Monthly Amortization:", color = Color.White.copy(0.6f), fontSize = 11.sp)
+                        Text("Monthly Amortization:", color = appTextSubColor(), fontSize = 11.sp)
                         Text("₱%,.2f / mo".format(expense.monthlyAmortization), color = Emerald400, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
 
@@ -301,12 +322,12 @@ fun ExpenseRow(expense: ExpenseEntity, onMarkPaid: () -> Unit, onDelete: () -> U
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Total Interest Cost:", color = Color.White.copy(0.6f), fontSize = 11.sp)
+                        Text("Total Interest Cost:", color = appTextSubColor(), fontSize = 11.sp)
                         Text("₱%,.2f".format(expense.totalInterest), color = if (expense.totalInterest > 0) RedAlert else GreenSuccess, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
 
                     Spacer(Modifier.height(8.dp))
-                    Text("Payment Schedule Progress:", color = Color.White.copy(0.6f), fontSize = 11.sp)
+                    Text("Payment Schedule Progress:", color = appTextSubColor(), fontSize = 11.sp)
                     Spacer(Modifier.height(4.dp))
 
                     (1..expense.totalInstallmentMonths).forEach { m ->
@@ -322,13 +343,13 @@ fun ExpenseRow(expense: ExpenseEntity, onMarkPaid: () -> Unit, onDelete: () -> U
                         ) {
                             Text(
                                 text = "Month $m of ${expense.totalInstallmentMonths}${if (isCurrent) " (Current)" else ""}",
-                                color = if (isCurrent) Emerald400 else Color.White.copy(0.7f),
+                                color = if (isCurrent) Emerald400 else appTextSubColor(),
                                 fontSize = 11.sp,
                                 fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal
                             )
                             Text(
                                 text = "₱%,.2f".format(expense.monthlyAmortization),
-                                color = Color.White.copy(0.8f),
+                                color = appTextColor(),
                                 fontSize = 11.sp
                             )
                         }

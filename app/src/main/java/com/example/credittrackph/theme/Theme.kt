@@ -26,32 +26,36 @@ private val DarkColorScheme = darkColorScheme(
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Emerald700,
+    primary = Color(0xFF0284C7), // Financial Sky Blue
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFD1FAE5),
-    onPrimaryContainer = Emerald900,
+    primaryContainer = Color(0xFFE0F2FE),
+    onPrimaryContainer = Color(0xFF0369A1),
     secondary = Color(0xFFD97706),
     onSecondary = Color.White,
-    background = Color(0xFFF8FAFC),
-    onBackground = Surface900,
+    background = Color(0xFFF8FAFC), // Clean crisp white / light slate
+    onBackground = Color(0xFF0F172A), // Dark slate typography
     surface = Color.White,
-    onSurface = Surface900,
+    onSurface = Color(0xFF0F172A),
     surfaceVariant = Color(0xFFF1F5F9),
-    onSurfaceVariant = Surface600,
-    outline = Color(0xFFCBD5E1),
+    onSurfaceVariant = Color(0xFF64748B),
+    outline = Color(0xFFE2E8F0),
     error = RedAlert,
     onError = Color.White,
 )
 
+val LocalIsDarkTheme = androidx.compose.runtime.compositionLocalOf { true }
+
 @Composable
 fun CreditTrackPHTheme(
-    darkTheme: Boolean = true, // Default dark
+    darkTheme: Boolean = true,
     content: @Composable () -> Unit
 ) {
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+    androidx.compose.runtime.CompositionLocalProvider(LocalIsDarkTheme provides darkTheme) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            content = content
+        )
+    }
 }

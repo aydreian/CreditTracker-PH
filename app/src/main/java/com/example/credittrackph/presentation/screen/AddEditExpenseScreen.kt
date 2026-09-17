@@ -20,6 +20,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.credittrackph.data.db.entity.CardEntity
 import com.example.credittrackph.data.model.ExpenseCategory
 import com.example.credittrackph.data.model.InterestType
+import com.example.credittrackph.data.model.inferExpenseCategory
 import com.example.credittrackph.domain.calculator.InstallmentCalculator
 import com.example.credittrackph.presentation.viewmodel.ExpenseViewModel
 import com.example.credittrackph.theme.*
@@ -39,6 +40,7 @@ fun AddEditExpenseScreen(
     var merchant by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf(ExpenseCategory.OTHER) }
+    var userManuallySelectedCategory by remember { mutableStateOf(false) }
     var purchaseDateMs by remember { mutableStateOf(System.currentTimeMillis()) }
     var isInstallment by remember { mutableStateOf(false) }
     var installmentMonths by remember { mutableStateOf(3) }
@@ -85,14 +87,14 @@ fun AddEditExpenseScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Add Expense", color = Color.White, fontWeight = FontWeight.Bold) },
+                title = { Text("Add Expense", color = appTextColor(), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = appTextColor()) }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Surface900)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = appCardColor())
             )
         },
-        containerColor = Surface950
+        containerColor = appBackgroundColor()
     ) { padding ->
         Column(
             modifier = Modifier
@@ -114,16 +116,25 @@ fun AddEditExpenseScreen(
                 ) {
                     Icon(Icons.Default.CreditCard, null, tint = Emerald400)
                     Spacer(Modifier.width(8.dp))
-                    Text("${card.label} •••• ${card.lastFourDigits}", color = Color.White, fontWeight = FontWeight.Medium)
+                    Text("${card.label} •••• ${card.lastFourDigits}", color = appTextColor(), fontWeight = FontWeight.Medium)
                 }
             }
 
             // Merchant
             FormSection("Merchant / Description") {
                 OutlinedTextField(
-                    value = merchant, onValueChange = { merchant = it },
+                    value = merchant,
+                    onValueChange = {
+                        merchant = it
+                        if (!userManuallySelectedCategory) {
+                            val inferred = inferExpenseCategory(it)
+                            if (inferred != ExpenseCategory.OTHER) {
+                                selectedCategory = inferred
+                            }
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("e.g. Jollibee, Lazada, SM Dept Store", color = Color.White.copy(0.4f)) },
+                    placeholder = { Text("e.g. Jollibee, Lazada, SM Dept Store", color = appTextSubColor().copy(0.4f)) },
                     colors = outlinedTextFieldColors(), singleLine = true
                 )
             }
@@ -133,7 +144,7 @@ fun AddEditExpenseScreen(
                 OutlinedTextField(
                     value = amount, onValueChange = { amount = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("0.00", color = Color.White.copy(0.4f)) },
+                    placeholder = { Text("0.00", color = appTextSubColor().copy(0.4f)) },
                     colors = outlinedTextFieldColors(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     leadingIcon = { Text("₱", color = Emerald400, fontWeight = FontWeight.Bold) },
@@ -159,11 +170,12 @@ fun AddEditExpenseScreen(
                         )
                         ExposedDropdownMenu(
                             expanded = profileDropdownExpanded,
-                            onDismissRequest = { profileDropdownExpanded = false }
+                            onDismissRequest = { profileDropdownExpanded = false },
+                            modifier = Modifier.background(appCardColor())
                         ) {
                             allProfiles.forEach { profile ->
                                 DropdownMenuItem(
-                                    text = { Text(profile.name) },
+                                    text = { Text(profile.name, color = appTextColor()) },
                                     onClick = {
                                         selectedProfileId = profile.id
                                         profileDropdownExpanded = false
@@ -176,12 +188,15 @@ fun AddEditExpenseScreen(
             }
 
             // Category
-            FormSection("Category") {
+            FormSection(if (!userManuallySelectedCategory && selectedCategory != ExpenseCategory.OTHER) "Category (AI Auto-detected ✨)" else "Category") {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     ExpenseCategory.entries.forEach { cat ->
                         FilterChip(
                             selected = selectedCategory == cat,
-                            onClick = { selectedCategory = cat },
+                            onClick = {
+                                selectedCategory = cat
+                                userManuallySelectedCategory = true
+                            },
                             label = { Text("${cat.emoji} ${cat.displayName}", fontSize = 12.sp) },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = Emerald500,
@@ -202,9 +217,9 @@ fun AddEditExpenseScreen(
                     enabled = false,
                     trailingIcon = { Icon(Icons.Default.CalendarMonth, null, tint = Emerald400) },
                     colors = OutlinedTextFieldDefaults.colors(
-                        disabledTextColor = Color.White,
-                        disabledBorderColor = Surface700,
-                        disabledContainerColor = Surface800
+                        disabledTextColor = appTextColor(),
+                        disabledBorderColor = appSurfaceColor(),
+                        disabledContainerColor = appCardColor()
                     )
                 )
             }
@@ -216,8 +231,8 @@ fun AddEditExpenseScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text("Installment", color = Color.White, fontWeight = FontWeight.Medium)
-                    Text("Split into monthly payments", color = Color.White.copy(0.5f), fontSize = 12.sp)
+                    Text("Installment", color = appTextColor(), fontWeight = FontWeight.Medium)
+                    Text("Split into monthly payments", color = appTextSubColor(), fontSize = 12.sp)
                 }
                 Switch(
                     checked = isInstallment,
@@ -266,7 +281,7 @@ fun AddEditExpenseScreen(
                                             InterestType.WITH_INTEREST -> "🏦 With Interest (${card.bank.shortCode} ${String.format("%.1f", card.bank.monthlyInterestRate * 100)}%/month)"
                                             else -> ""
                                         },
-                                        color = Color.White, fontSize = 14.sp
+                                        color = appTextColor(), fontSize = 14.sp
                                     )
                                 }
                             }
@@ -277,21 +292,21 @@ fun AddEditExpenseScreen(
                 // Preview
                 if (amountDouble > 0) {
                     Card(
-                        colors = CardDefaults.cardColors(containerColor = Surface800),
+                        colors = CardDefaults.cardColors(containerColor = appCardColor()),
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text("Payment Preview", color = Emerald400, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                            HorizontalDivider(color = Surface700)
+                            HorizontalDivider(color = appSurfaceColor())
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("🎉 0% option:", color = Color.White.copy(0.8f), fontSize = 13.sp)
+                                Text("🎉 0% option:", color = appTextSubColor(), fontSize = 13.sp)
                                 Text(
                                     "₱${String.format("%,.2f", monthlyPreview0)}/mo  →  Total: ₱${String.format("%,.2f", amountDouble)}",
                                     color = GreenSuccess, fontSize = 13.sp, fontWeight = FontWeight.Medium
                                 )
                             }
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("🏦 With interest:", color = Color.White.copy(0.8f), fontSize = 13.sp)
+                                Text("🏦 With interest:", color = appTextSubColor(), fontSize = 13.sp)
                                 Text(
                                     "₱${String.format("%,.2f", monthlyPreviewWithInterest)}/mo  →  Total: ₱${String.format("%,.2f", monthlyPreviewWithInterest * installmentMonths)}",
                                     color = YellowWarn, fontSize = 13.sp, fontWeight = FontWeight.Medium
@@ -307,7 +322,7 @@ fun AddEditExpenseScreen(
                 OutlinedTextField(
                     value = note, onValueChange = { note = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Add any notes here...", color = Color.White.copy(0.4f)) },
+                    placeholder = { Text("Add any notes here...", color = appTextSubColor().copy(0.4f)) },
                     colors = outlinedTextFieldColors(),
                     maxLines = 3
                 )

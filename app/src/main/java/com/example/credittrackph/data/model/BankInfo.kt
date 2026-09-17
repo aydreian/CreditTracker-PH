@@ -49,3 +49,52 @@ enum class ExpenseCategory(val displayName: String, val emoji: String) {
 enum class ExpenseSource { MANUAL, SMS_AUTO }
 
 enum class InterestType { ZERO_PERCENT, WITH_INTEREST, UNCERTAIN }
+
+fun inferExpenseCategory(merchant: String): ExpenseCategory {
+    val m = merchant.lowercase(java.util.Locale.getDefault())
+    return when {
+        m.contains("jollibee") || m.contains("mcdo") || m.contains("starbucks") || m.contains("kfc") ||
+        m.contains("food") || m.contains("chowking") || m.contains("mang inasal") || m.contains("pizza") ||
+        m.contains("restaurant") || m.contains("cafe") || m.contains("coffee") || m.contains("burger") ||
+        m.contains("bistro") || m.contains("bakery") || m.contains("dining") -> ExpenseCategory.FOOD
+
+        m.contains("grab") || m.contains("angkas") || m.contains("joyride") || m.contains("shell") ||
+        m.contains("petron") || m.contains("caltex") || m.contains("gas") || m.contains("fuel") ||
+        m.contains("parking") || m.contains("toll") || m.contains("easytrip") || m.contains("autosweep") ||
+        m.contains("taxi") || m.contains("transport") -> ExpenseCategory.TRANSPORT
+
+        m.contains("supermarket") || m.contains("grocer") || m.contains("puregold") || m.contains("robinsons super") ||
+        m.contains("sm super") || m.contains("hypermarket") || m.contains("waltermart") || m.contains("dali") ||
+        m.contains("savemore") || m.contains("market") -> ExpenseCategory.GROCERIES
+
+        m.contains("meralco") || m.contains("maynilad") || m.contains("manila water") || m.contains("pldt") ||
+        m.contains("globe") || m.contains("smart") || m.contains("converge") || m.contains("dito") ||
+        m.contains("electricity") || m.contains("water") || m.contains("utility") || m.contains("internet") -> ExpenseCategory.UTILITIES
+
+        m.contains("mercury drug") || m.contains("watsons") || m.contains("pharmacy") || m.contains("hospital") ||
+        m.contains("clinic") || m.contains("doctor") || m.contains("medical") || m.contains("dental") ||
+        m.contains("generika") || m.contains("health") -> ExpenseCategory.HEALTH
+
+        m.contains("cinema") || m.contains("netflix") || m.contains("spotify") || m.contains("steam") ||
+        m.contains("playstation") || m.contains("disney") || m.contains("movie") || m.contains("game") ||
+        m.contains("concert") || m.contains("ticketnet") || m.contains("entertainment") -> ExpenseCategory.ENTERTAINMENT
+
+        m.contains("cebu pacific") || m.contains("philippine airlines") || m.contains("pal") || m.contains("airasia") ||
+        m.contains("hotel") || m.contains("resort") || m.contains("agoda") || m.contains("booking") ||
+        m.contains("airbnb") || m.contains("klook") || m.contains("travel") || m.contains("flight") -> ExpenseCategory.TRAVEL
+
+        m.contains("tuition") || m.contains("school") || m.contains("university") || m.contains("college") ||
+        m.contains("books") || m.contains("national book store") || m.contains("fully booked") ||
+        m.contains("academy") || m.contains("education") -> ExpenseCategory.EDUCATION
+
+        m.contains("shopee") || m.contains("lazada") || m.contains("tiktok shop") || m.contains("amazon") ||
+        m.contains("online") -> ExpenseCategory.ONLINE
+
+        m.contains("uniqlo") || m.contains("zara") || m.contains("h&m") || m.contains("nike") ||
+        m.contains("adidas") || m.contains("sm store") || m.contains("department store") || m.contains("apple") ||
+        m.contains("samsung") || m.contains("mall") || m.contains("shopping") || m.contains("clothing") -> ExpenseCategory.SHOPPING
+
+        else -> ExpenseCategory.OTHER
+    }
+}
+

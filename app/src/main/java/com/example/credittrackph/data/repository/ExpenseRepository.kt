@@ -27,4 +27,10 @@ class ExpenseRepository @Inject constructor(
     suspend fun updateExpense(expense: ExpenseEntity) = expenseDao.updateExpense(expense)
     suspend fun deleteExpense(expense: ExpenseEntity) = expenseDao.deleteExpense(expense)
     suspend fun markAsPaid(expenseId: Int) = expenseDao.markAsPaid(expenseId)
+    suspend fun markAsUnpaid(expenseId: Int) = expenseDao.markAsUnpaid(expenseId)
+    suspend fun markInstallmentGroupAsPaid(merchantName: String, purchaseDate: Long) =
+        expenseDao.markInstallmentGroupAsPaid(purchaseDate, merchantName)
+    suspend fun deleteInstallmentGroup(merchantName: String, purchaseDate: Long) =
+        expenseDao.deleteInstallmentGroup(purchaseDate, merchantName)
 }
+

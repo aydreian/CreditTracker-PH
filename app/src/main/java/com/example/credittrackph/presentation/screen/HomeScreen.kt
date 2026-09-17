@@ -13,7 +13,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -31,6 +33,8 @@ fun HomeScreen(
     onViewWallet: () -> Unit,
     onCardClick: (CardEntity) -> Unit,
     onAiClick: () -> Unit,
+    isDarkTheme: Boolean = true,
+    onToggleTheme: () -> Unit = {},
     cardViewModel: CardViewModel = hiltViewModel(),
     expenseViewModel: ExpenseViewModel = hiltViewModel(),
     profileViewModel: com.example.credittrackph.presentation.viewmodel.ProfileViewModel = hiltViewModel()
@@ -46,11 +50,84 @@ fun HomeScreen(
     val allProfiles by profileViewModel.allProfiles.collectAsState()
 
     var isBalanceVisible by remember { mutableStateOf(true) }
+    var showNotificationsDialog by remember { mutableStateOf(false) }
+
+    if (showNotificationsDialog) {
+        AlertDialog(
+            onDismissRequest = { showNotificationsDialog = false },
+            containerColor = appSurfaceColor(),
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.Default.NotificationsActive, contentDescription = null, tint = Emerald400)
+                    Text("Notifications & Alerts", color = appTextColor(), fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Surface(
+                        color = Emerald500.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Text("📡", fontSize = 20.sp)
+                            Column {
+                                Text("SMS Auto-Tracking Active", color = Emerald400, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                Text("Transactions from BDO, BPI, UnionBank, etc. are automatically recognized and recorded.", color = appTextSubColor(), fontSize = 11.sp)
+                            }
+                        }
+                    }
+
+                    Text(
+                        "Upcoming Dues (Next 7 Days):",
+                        color = appTextColor(),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp
+                    )
+
+                    if (upcomingDues.isEmpty()) {
+                        Text("🎉 No payments due within the next 7 days!", color = appTextSubColor(), fontSize = 12.sp)
+                    } else {
+                        val sdf = SimpleDateFormat("MMM dd", Locale.getDefault())
+                        upcomingDues.take(4).forEach { due ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(Modifier.weight(1f)) {
+                                    Text(
+                                        due.merchantName,
+                                        color = appTextColor(),
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 13.sp,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text("Due: ${sdf.format(Date(due.dueDate))}", color = appTextSubColor(), fontSize = 11.sp)
+                                }
+                                Text("₱%,.2f".format(due.monthlyAmortization), color = RedAlert, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showNotificationsDialog = false }) {
+                    Text("Close", color = Emerald400, fontWeight = FontWeight.Bold)
+                }
+            }
+        )
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Surface950)
+            .background(appBackgroundColor())
             .verticalScroll(rememberScrollState())
     ) {
         // ── Header ──
@@ -71,30 +148,48 @@ fun HomeScreen(
                 )
                 Text(
                     "Good ${getTimeGreeting()}",
-                    color = Color.White,
+                    color = appTextColor(),
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                // Theme Toggle Button
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(if (isDarkTheme) Surface800 else Color(0xFFE2E8F0), CircleShape)
+                        .clickable { onToggleTheme() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
+                        contentDescription = "Toggle Theme",
+                        tint = if (isDarkTheme) Gold400 else Color(0xFF0284C7),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
                 // AI Helper Trigger
                 Box(
                     modifier = Modifier
-                        .size(44.dp)
+                        .size(40.dp)
                         .background(Emerald500.copy(alpha = 0.2f), CircleShape)
                         .clickable { onAiClick() },
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.AutoAwesome, contentDescription = "AI Assistant", tint = Emerald400)
+                    Icon(Icons.Default.AutoAwesome, contentDescription = "AI Assistant", tint = Emerald400, modifier = Modifier.size(20.dp))
                 }
                 
+                // Notification Center Trigger
                 Box(
                     modifier = Modifier
-                        .size(44.dp)
-                        .background(Surface800, CircleShape),
+                        .size(40.dp)
+                        .background(if (isDarkTheme) Surface800 else Color(0xFFE2E8F0), CircleShape)
+                        .clickable { showNotificationsDialog = true },
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.Notifications, contentDescription = null, tint = Emerald400)
+                    Icon(Icons.Default.Notifications, contentDescription = "Notifications", tint = Emerald400, modifier = Modifier.size(20.dp))
                 }
             }
         }
@@ -165,6 +260,35 @@ fun HomeScreen(
             recentTransactions.forEach { expense ->
                 val swipedBy = allProfiles.find { it.id == expense.profileId }?.name ?: "Unknown"
                 RecentTransactionRow(expense = expense, isVisible = isBalanceVisible, swipedBy = swipedBy)
+            }
+        }
+
+        // ── Watermark Footer ──
+        val uriHandler = LocalUriHandler.current
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 8.dp)
+                .clickable {
+                    try {
+                        uriHandler.openUri("https://github.com/aydreian")
+                    } catch (_: Exception) {}
+                },
+            color = appCardColor().copy(alpha = 0.5f),
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.dp, appSurfaceColor())
+        ) {
+            Row(
+                modifier = Modifier.padding(vertical = 12.dp, horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "Built with ❤️ by aydreian • github.com/aydreian",
+                    color = appTextSubColor(),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium
+                )
             }
         }
 
@@ -265,13 +389,31 @@ private fun NetWorthCard(
 private fun NetWorthSubCard(label: String, value: String, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
+            .height(64.dp)
             .background(Color.White.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
-            .padding(horizontal = 12.dp, vertical = 10.dp)
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        contentAlignment = Alignment.CenterStart
     ) {
-        Column {
-            Text(label, color = Color.White.copy(alpha = 0.7f), fontSize = 10.sp, fontWeight = FontWeight.Medium)
-            Spacer(Modifier.height(2.dp))
-            Text(value, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+        Column(verticalArrangement = Arrangement.Center) {
+            Text(
+                label,
+                color = Color.White.copy(alpha = 0.75f),
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                softWrap = false
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                value,
+                color = Color.White,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                softWrap = false
+            )
         }
     }
 }
@@ -288,18 +430,36 @@ private fun QuickStatItem(
     onClick: () -> Unit = {}
 ) {
     Card(
-        modifier = modifier.clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = Surface800),
+        modifier = modifier
+            .height(100.dp)
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(containerColor = appCardColor()),
         shape = RoundedCornerShape(14.dp)
     ) {
         Column(
-            modifier = Modifier.padding(14.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(22.dp))
-            Spacer(Modifier.height(8.dp))
-            Text(value, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Text(label, color = Color.White.copy(alpha = 0.5f), fontSize = 11.sp)
+            Spacer(Modifier.height(6.dp))
+            Text(
+                value,
+                color = appTextColor(),
+                fontWeight = FontWeight.Bold,
+                fontSize = 15.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                label,
+                color = appTextSubColor(),
+                fontSize = 11.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }
@@ -319,7 +479,7 @@ private fun HomeSectionHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 17.sp)
+        Text(title, color = appTextColor(), fontWeight = FontWeight.Bold, fontSize = 17.sp)
         if (onTrailingClick != null) {
             Text(
                 trailing,
@@ -329,7 +489,7 @@ private fun HomeSectionHeader(
                 modifier = Modifier.clickable { onTrailingClick() }
             )
         } else if (trailing.isNotEmpty()) {
-            Text(trailing, color = Color.White.copy(alpha = 0.5f), fontSize = 13.sp)
+            Text(trailing, color = appTextSubColor(), fontSize = 13.sp)
         }
     }
 }
@@ -350,7 +510,7 @@ private fun UpcomingDueRow(expense: ExpenseEntity, isVisible: Boolean, swipedBy:
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp, vertical = 3.dp),
-        colors = CardDefaults.cardColors(containerColor = Surface800),
+        colors = CardDefaults.cardColors(containerColor = appCardColor()),
         shape = RoundedCornerShape(12.dp)
     ) {
         Row(
@@ -364,35 +524,56 @@ private fun UpcomingDueRow(expense: ExpenseEntity, isVisible: Boolean, swipedBy:
             )
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(expense.merchantName, color = Color.White, fontWeight = FontWeight.Medium, fontSize = 14.sp)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Due: ${sdf.format(Date(expense.dueDate))}", color = Color.White.copy(alpha = 0.5f), fontSize = 11.sp)
-                    Spacer(Modifier.width(6.dp))
+                Text(
+                    expense.merchantName,
+                    color = appTextColor(),
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 14.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(Modifier.height(2.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        "Due: ${sdf.format(Date(expense.dueDate))}",
+                        color = appTextSubColor(),
+                        fontSize = 11.sp,
+                        softWrap = false
+                    )
                     Box(
                         modifier = Modifier
-                            .background(Surface700.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
-                            .padding(horizontal = 4.dp, vertical = 1.dp)
+                            .background(Surface700.copy(alpha = 0.35f), RoundedCornerShape(4.dp))
+                            .padding(horizontal = 6.dp, vertical = 1.dp)
                     ) {
                         Text(
                             "Swiped by: $swipedBy",
-                            color = Color.White.copy(0.6f),
+                            color = appTextColor().copy(alpha = 0.8f),
                             fontSize = 9.sp,
-                            fontWeight = FontWeight.Medium
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            softWrap = false
                         )
                     }
                 }
             }
+            Spacer(Modifier.width(8.dp))
             Column(horizontalAlignment = Alignment.End) {
                 Text(
                     if (isVisible) "₱%,.2f".format(expense.monthlyAmortization) else "••••",
                     color = urgencyColor,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
+                    fontSize = 14.sp,
+                    softWrap = false
                 )
                 Text(
                     if (daysLeft <= 0) "Overdue!" else "$daysLeft day${if (daysLeft != 1) "s" else ""}",
                     color = urgencyColor,
-                    fontSize = 10.sp
+                    fontSize = 10.sp,
+                    softWrap = false
                 )
             }
         }
@@ -409,7 +590,7 @@ private fun RecentTransactionRow(expense: ExpenseEntity, isVisible: Boolean, swi
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp, vertical = 3.dp),
-        colors = CardDefaults.cardColors(containerColor = Surface800),
+        colors = CardDefaults.cardColors(containerColor = appCardColor()),
         shape = RoundedCornerShape(12.dp)
     ) {
         Row(
@@ -419,33 +600,51 @@ private fun RecentTransactionRow(expense: ExpenseEntity, isVisible: Boolean, swi
             Text(expense.category.emoji, fontSize = 24.sp)
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(expense.merchantName, color = Color.White, fontWeight = FontWeight.Medium, fontSize = 14.sp)
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    expense.merchantName,
+                    color = appTextColor(),
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 14.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(Modifier.height(2.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
                     Text(
                         "${expense.category.displayName} • ${sdf.format(Date(expense.purchaseDate))}",
-                        color = Color.White.copy(alpha = 0.5f),
-                        fontSize = 11.sp
+                        color = appTextSubColor(),
+                        fontSize = 11.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        softWrap = false
                     )
-                    Spacer(Modifier.width(6.dp))
                     Box(
                         modifier = Modifier
-                            .background(Surface700.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
-                            .padding(horizontal = 4.dp, vertical = 1.dp)
+                            .background(Surface700.copy(alpha = 0.35f), RoundedCornerShape(4.dp))
+                            .padding(horizontal = 6.dp, vertical = 1.dp)
                     ) {
                         Text(
                             "Swiped by: $swipedBy",
-                            color = Color.White.copy(0.6f),
+                            color = appTextColor().copy(alpha = 0.8f),
                             fontSize = 9.sp,
-                            fontWeight = FontWeight.Medium
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            softWrap = false
                         )
                     }
                 }
             }
+            Spacer(Modifier.width(8.dp))
             Text(
                 if (isVisible) "₱%,.2f".format(expense.monthlyAmortization) else "••••",
-                color = if (expense.isPaid) GreenSuccess else Color.White,
+                color = if (expense.isPaid) GreenSuccess else appTextColor(),
                 fontWeight = FontWeight.Bold,
-                fontSize = 14.sp
+                fontSize = 14.sp,
+                softWrap = false
             )
         }
     }

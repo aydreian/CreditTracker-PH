@@ -69,19 +69,14 @@ fun CreditCardView(
         )
 
         Column(modifier = Modifier.fillMaxSize()) {
-            // Top row: Bank name + Card type
+            // Top row: Bank logo + Card network logo
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = card.bank.shortCode,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                )
-                CardTypeBadge(card.cardType)
+                BankLogo(card.bank)
+                CardNetworkLogo(card.cardType)
             }
 
             Spacer(Modifier.weight(1f))

@@ -11,14 +11,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -124,7 +124,7 @@ fun TransactionsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Surface950)
+            .background(appBackgroundColor())
     ) {
         // ── Header ──
         Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
@@ -137,14 +137,14 @@ fun TransactionsScreen(
             )
             Text(
                 "Transactions",
-                color = Color.White,
+                color = appTextColor(),
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold
             )
             Spacer(Modifier.height(4.dp))
             Text(
                 "${transactionItems.size} transaction group${if (transactionItems.size != 1) "s" else ""}",
-                color = Color.White.copy(alpha = 0.5f),
+                color = appTextSubColor(),
                 fontSize = 13.sp
             )
         }
@@ -174,32 +174,94 @@ fun TransactionsScreen(
 
         // ── Filter Dropdown (Profile) ──
         if (allProfiles.isNotEmpty()) {
-            Row(
+            var profileDropdownExpanded by remember { mutableStateOf(false) }
+            val selectedProfileName = remember(selectedProfileFilterId, allProfiles) {
+                if (selectedProfileFilterId == null) {
+                    "Overall transaction"
+                } else {
+                    val p = allProfiles.find { it.id == selectedProfileFilterId }
+                    if (p != null) "List for ${p.name}" else "Overall transaction"
+                }
+            }
+
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    .padding(horizontal = 20.dp)
             ) {
-                FilterChip(
-                    selected = selectedProfileFilterId == null,
-                    onClick = { selectedProfileFilterId = null },
-                    label = { Text("Overall transaction", fontSize = 12.sp) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = Emerald500,
-                        selectedLabelColor = Surface950
-                    )
-                )
-                allProfiles.forEach { profile ->
-                    FilterChip(
-                        selected = selectedProfileFilterId == profile.id,
-                        onClick = { selectedProfileFilterId = profile.id },
-                        label = { Text("List for ${profile.name}", fontSize = 12.sp) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Emerald500,
-                            selectedLabelColor = Surface950
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { profileDropdownExpanded = true },
+                    color = appCardColor(),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, Surface700.copy(alpha = 0.35f))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("👤", fontSize = 14.sp)
+                            Text(
+                                selectedProfileName,
+                                color = appTextColor(),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                        Icon(
+                            if (profileDropdownExpanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
+                            contentDescription = "Select Profile",
+                            tint = Emerald400
                         )
+                    }
+                }
+
+                DropdownMenu(
+                    expanded = profileDropdownExpanded,
+                    onDismissRequest = { profileDropdownExpanded = false },
+                    modifier = Modifier
+                        .fillMaxWidth(0.9f)
+                        .background(appCardColor())
+                ) {
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                "Overall transaction",
+                                color = if (selectedProfileFilterId == null) Emerald400 else appTextColor(),
+                                fontWeight = if (selectedProfileFilterId == null) FontWeight.Bold else FontWeight.Normal
+                            )
+                        },
+                        onClick = {
+                            selectedProfileFilterId = null
+                            profileDropdownExpanded = false
+                        }
                     )
+                    allProfiles.forEach { profile ->
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    "List for ${profile.name}",
+                                    color = if (selectedProfileFilterId == profile.id) Emerald400 else appTextColor(),
+                                    fontWeight = if (selectedProfileFilterId == profile.id) FontWeight.Bold else FontWeight.Normal
+                                )
+                            },
+                            onClick = {
+                                selectedProfileFilterId = profile.id
+                                profileDropdownExpanded = false
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -217,13 +279,13 @@ fun TransactionsScreen(
                     Spacer(Modifier.height(12.dp))
                     Text(
                         "No transactions found",
-                        color = Color.White,
+                        color = appTextColor(),
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp
                     )
                     Text(
                         "Your transactions will appear here",
-                        color = Color.White.copy(alpha = 0.5f),
+                        color = appTextSubColor(),
                         fontSize = 13.sp
                     )
                 }
@@ -232,13 +294,13 @@ fun TransactionsScreen(
             // ── Grouped Transaction List ──
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 20.dp)
+                contentPadding = PaddingValues(bottom = 80.dp)
             ) {
                 groupedByDate.forEach { (dateLabel, items) ->
                     item {
                         Text(
                             dateLabel,
-                            color = Color.White.copy(alpha = 0.5f),
+                            color = appTextSubColor(),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium,
                             modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
@@ -249,11 +311,37 @@ fun TransactionsScreen(
                             when (item) {
                                 is TransactionItem.Single -> {
                                     val swipedBy = allProfiles.find { it.id == item.expense.profileId }?.name ?: "Unknown"
-                                    TransactionRow(expense = item.expense, swipedBy = swipedBy)
+                                    TransactionRow(
+                                        expense = item.expense,
+                                        swipedBy = swipedBy,
+                                        onTogglePaid = {
+                                            if (item.expense.isPaid) {
+                                                expenseViewModel.markAsUnpaid(item.expense.id)
+                                            } else {
+                                                expenseViewModel.markAsPaid(item.expense.id)
+                                            }
+                                        }
+                                    )
                                 }
                                 is TransactionItem.InstallmentGroup -> {
                                     val swipedBy = allProfiles.find { it.id == item.expenses.first().profileId }?.name ?: "Unknown"
-                                    GroupedInstallmentRow(group = item, swipedBy = swipedBy)
+                                    GroupedInstallmentRow(
+                                        group = item,
+                                        swipedBy = swipedBy,
+                                        onPayAll = {
+                                            expenseViewModel.payOffInstallmentGroup(item.merchantName, item.purchaseDate)
+                                        },
+                                        onDeleteGroup = {
+                                            expenseViewModel.deleteInstallmentGroup(item.merchantName, item.purchaseDate)
+                                        },
+                                        onToggleExpensePaid = { id, isPaid ->
+                                            if (isPaid) {
+                                                expenseViewModel.markAsUnpaid(id)
+                                            } else {
+                                                expenseViewModel.markAsPaid(id)
+                                            }
+                                        }
+                                    )
                                 }
                             }
                         }
@@ -267,7 +355,11 @@ fun TransactionsScreen(
 // ── Single Transaction Row ──
 
 @Composable
-private fun TransactionRow(expense: ExpenseEntity, swipedBy: String) {
+private fun TransactionRow(
+    expense: ExpenseEntity,
+    swipedBy: String,
+    onTogglePaid: () -> Unit = {}
+) {
     val now = System.currentTimeMillis()
     val daysLeft = ((expense.dueDate - now) / (24 * 60 * 60 * 1000L)).toInt()
 
@@ -276,7 +368,7 @@ private fun TransactionRow(expense: ExpenseEntity, swipedBy: String) {
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 3.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (expense.isPaid) Surface800.copy(alpha = 0.5f) else Surface800
+            containerColor = if (expense.isPaid) appCardColor().copy(alpha = 0.5f) else appCardColor()
         ),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -287,7 +379,7 @@ private fun TransactionRow(expense: ExpenseEntity, swipedBy: String) {
             Box(
                 modifier = Modifier
                     .size(42.dp)
-                    .background(Surface700, RoundedCornerShape(12.dp)),
+                    .background(appSurfaceColor(), RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Text(expense.category.emoji, fontSize = 20.sp)
@@ -298,27 +390,37 @@ private fun TransactionRow(expense: ExpenseEntity, swipedBy: String) {
             Column(Modifier.weight(1f)) {
                 Text(
                     expense.merchantName,
-                    color = if (expense.isPaid) Color.White.copy(0.5f) else Color.White,
+                    color = if (expense.isPaid) appTextColor().copy(0.5f) else appTextColor(),
                     fontWeight = FontWeight.Medium,
-                    fontSize = 14.sp
+                    fontSize = 14.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Spacer(Modifier.height(2.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
                     Text(
                         expense.category.displayName,
-                        color = Color.White.copy(alpha = 0.4f),
-                        fontSize = 11.sp
+                        color = appTextSubColor(),
+                        fontSize = 11.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
-                    Spacer(Modifier.width(6.dp))
                     Box(
                         modifier = Modifier
-                            .background(Surface700.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
-                            .padding(horizontal = 4.dp, vertical = 1.dp)
+                            .background(appSurfaceColor(), RoundedCornerShape(4.dp))
+                            .padding(horizontal = 6.dp, vertical = 1.dp)
                     ) {
                         Text(
                             "Swiped by: $swipedBy",
-                            color = Color.White.copy(0.6f),
+                            color = appTextSubColor(),
                             fontSize = 9.sp,
-                            fontWeight = FontWeight.Medium
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            softWrap = false
                         )
                     }
                 }
@@ -327,16 +429,23 @@ private fun TransactionRow(expense: ExpenseEntity, swipedBy: String) {
             Column(horizontalAlignment = Alignment.End) {
                 Text(
                     "₱%,.2f".format(expense.monthlyAmortization),
-                    color = if (expense.isPaid) Color.White.copy(0.4f) else Color.White,
+                    color = if (expense.isPaid) appTextColor().copy(0.4f) else appTextColor(),
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp
                 )
-                if (expense.isPaid) {
-                    Text("✓ Paid", color = GreenSuccess, fontSize = 10.sp)
-                } else if (daysLeft < 0) {
-                    Text("Overdue", color = RedAlert, fontSize = 10.sp)
-                } else {
-                    Text("Due in $daysLeft d", color = Color.White.copy(0.4f), fontSize = 10.sp)
+                Spacer(Modifier.height(2.dp))
+                Surface(
+                    color = if (expense.isPaid) GreenSuccess.copy(alpha = 0.15f) else if (daysLeft < 0) RedAlert.copy(alpha = 0.15f) else appSurfaceColor(),
+                    shape = RoundedCornerShape(4.dp),
+                    modifier = Modifier.clickable { onTogglePaid() }
+                ) {
+                    Text(
+                        text = if (expense.isPaid) "✓ Paid (undo)" else if (daysLeft < 0) "Overdue • Pay" else "Due in $daysLeft d • Pay",
+                        color = if (expense.isPaid) GreenSuccess else if (daysLeft < 0) RedAlert else appTextSubColor(),
+                        fontSize = 10.sp,
+                        fontWeight = if (expense.isPaid) FontWeight.Bold else FontWeight.Normal,
+                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                    )
                 }
             }
         }
@@ -346,14 +455,54 @@ private fun TransactionRow(expense: ExpenseEntity, swipedBy: String) {
 // ── Grouped Installment Row ──
 
 @Composable
-private fun GroupedInstallmentRow(group: TransactionItem.InstallmentGroup, swipedBy: String) {
+private fun GroupedInstallmentRow(
+    group: TransactionItem.InstallmentGroup,
+    swipedBy: String,
+    onPayAll: () -> Unit = {},
+    onDeleteGroup: () -> Unit = {},
+    onToggleExpensePaid: (Int, Boolean) -> Unit = { _, _ -> }
+) {
     var expanded by remember { mutableStateOf(false) }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     val firstExpense = group.expenses.first()
-    
+
     // Total original purchase amount
     val totalAmount = group.expenses.sumOf { it.monthlyAmortization }
     val paidCount = group.expenses.count { it.isPaid }
+    val remainingCount = group.expenses.size - paidCount
     val isFullyPaid = paidCount == group.expenses.size
+
+    if (showDeleteConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmDialog = false },
+            containerColor = appCardColor(),
+            title = {
+                Text("Delete Installment?", color = appTextColor(), fontWeight = FontWeight.Bold)
+            },
+            text = {
+                Text(
+                    "Are you sure you want to delete all payments for ${group.merchantName}? This will completely remove all ${group.expenses.size} monthly installments.",
+                    color = appTextSubColor(),
+                    fontSize = 13.sp
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteConfirmDialog = false
+                        onDeleteGroup()
+                    }
+                ) {
+                    Text("Delete", color = RedAlert, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                    Text("Cancel", color = appTextSubColor())
+                }
+            }
+        )
+    }
 
     Card(
         modifier = Modifier
@@ -361,7 +510,7 @@ private fun GroupedInstallmentRow(group: TransactionItem.InstallmentGroup, swipe
             .padding(horizontal = 16.dp, vertical = 3.dp)
             .animateContentSize(animationSpec = tween(300)),
         colors = CardDefaults.cardColors(
-            containerColor = if (isFullyPaid) Surface800.copy(alpha = 0.5f) else Surface800
+            containerColor = if (isFullyPaid) appCardColor().copy(alpha = 0.5f) else appCardColor()
         ),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -377,7 +526,7 @@ private fun GroupedInstallmentRow(group: TransactionItem.InstallmentGroup, swipe
                 Box(
                     modifier = Modifier
                         .size(42.dp)
-                        .background(Surface700, RoundedCornerShape(12.dp)),
+                        .background(appSurfaceColor(), RoundedCornerShape(12.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(firstExpense.category.emoji, fontSize = 20.sp)
@@ -388,62 +537,74 @@ private fun GroupedInstallmentRow(group: TransactionItem.InstallmentGroup, swipe
                 Column(Modifier.weight(1f)) {
                     Text(
                         group.merchantName,
-                        color = if (isFullyPaid) Color.White.copy(0.5f) else Color.White,
+                        color = if (isFullyPaid) appTextColor().copy(0.5f) else appTextColor(),
                         fontWeight = FontWeight.Medium,
-                        fontSize = 14.sp
+                        fontSize = 14.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Spacer(Modifier.height(2.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
                         Text(
                             firstExpense.category.displayName,
-                            color = Color.White.copy(alpha = 0.4f),
-                            fontSize = 11.sp
+                            color = appTextSubColor(),
+                            fontSize = 11.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
-                        Spacer(Modifier.width(6.dp))
                         Box(
                             modifier = Modifier
-                                .background(Emerald500.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
+                                .background(Emerald500.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
                                 .padding(horizontal = 4.dp, vertical = 1.dp)
                         ) {
                             Text(
                                 "Installment ($paidCount/${group.expenses.size})",
                                 color = Emerald400,
                                 fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                softWrap = false
                             )
                         }
-                        Spacer(Modifier.width(4.dp))
-                        Box(
-                            modifier = Modifier
-                                .background(Surface700.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
-                                .padding(horizontal = 4.dp, vertical = 1.dp)
-                        ) {
-                            Text(
-                                "Swiped by: $swipedBy",
-                                color = Color.White.copy(0.6f),
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
+                    }
+                    Spacer(Modifier.height(2.dp))
+                    Box(
+                        modifier = Modifier
+                            .background(appSurfaceColor(), RoundedCornerShape(4.dp))
+                            .padding(horizontal = 6.dp, vertical = 1.dp)
+                    ) {
+                        Text(
+                            "Swiped by: $swipedBy",
+                            color = appTextSubColor(),
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            softWrap = false
+                        )
                     }
                 }
 
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
                         "₱%,.2f".format(totalAmount),
-                        color = if (isFullyPaid) Color.White.copy(0.4f) else Color.White,
+                        color = if (isFullyPaid) appTextColor().copy(0.4f) else appTextColor(),
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp
                     )
                     Icon(
                         if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                         contentDescription = "Expand",
-                        tint = Color.White.copy(alpha = 0.5f),
+                        tint = appTextSubColor(),
                         modifier = Modifier.size(16.dp)
                     )
                 }
             }
 
-            // Dropdown Items
+            // Dropdown Items & Lifecycle Actions
             AnimatedVisibility(
                 visible = expanded,
                 enter = expandVertically(animationSpec = tween(300)),
@@ -452,15 +613,15 @@ private fun GroupedInstallmentRow(group: TransactionItem.InstallmentGroup, swipe
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Surface900.copy(alpha = 0.5f))
-                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                        .background(appSurfaceColor().copy(alpha = 0.5f))
+                        .padding(horizontal = 14.dp, vertical = 10.dp)
                 ) {
                     val sdf = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
                     val now = System.currentTimeMillis()
-                    
+
                     group.expenses.forEach { expense ->
                         val daysLeft = ((expense.dueDate - now) / (24 * 60 * 60 * 1000L)).toInt()
-                        
+
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -471,7 +632,7 @@ private fun GroupedInstallmentRow(group: TransactionItem.InstallmentGroup, swipe
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
                                     "${expense.currentInstallmentMonth}/${expense.totalInstallmentMonths}",
-                                    color = Color.White.copy(0.7f),
+                                    color = appTextColor().copy(0.7f),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Medium,
                                     modifier = Modifier.width(36.dp)
@@ -479,25 +640,78 @@ private fun GroupedInstallmentRow(group: TransactionItem.InstallmentGroup, swipe
                                 Spacer(Modifier.width(8.dp))
                                 Text(
                                     sdf.format(Date(expense.dueDate)),
-                                    color = Color.White.copy(0.5f),
+                                    color = appTextSubColor(),
                                     fontSize = 12.sp
                                 )
                             }
-                            
+
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                if (expense.isPaid) {
-                                    Text("Paid", color = GreenSuccess, fontSize = 11.sp, modifier = Modifier.padding(end = 12.dp))
-                                } else if (daysLeft < 0) {
-                                    Text("Overdue", color = RedAlert, fontSize = 11.sp, modifier = Modifier.padding(end = 12.dp))
+                                Surface(
+                                    color = if (expense.isPaid) GreenSuccess.copy(alpha = 0.15f) else if (daysLeft < 0) RedAlert.copy(alpha = 0.15f) else appCardColor(),
+                                    shape = RoundedCornerShape(4.dp),
+                                    modifier = Modifier
+                                        .padding(end = 10.dp)
+                                        .clickable { onToggleExpensePaid(expense.id, expense.isPaid) }
+                                ) {
+                                    Text(
+                                        text = if (expense.isPaid) "✓ Paid" else if (daysLeft < 0) "Overdue" else "Due in $daysLeft d",
+                                        color = if (expense.isPaid) GreenSuccess else if (daysLeft < 0) RedAlert else appTextSubColor(),
+                                        fontSize = 10.sp,
+                                        fontWeight = if (expense.isPaid) FontWeight.Bold else FontWeight.Normal,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
                                 }
-                                
+
                                 Text(
                                     "₱%,.2f".format(expense.monthlyAmortization),
-                                    color = if (expense.isPaid) Color.White.copy(0.4f) else Color.White,
+                                    color = if (expense.isPaid) appTextColor().copy(0.4f) else appTextColor(),
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 12.sp
                                 )
                             }
+                        }
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+                    HorizontalDivider(color = appSurfaceColor())
+                    Spacer(Modifier.height(8.dp))
+
+                    // ── Installment Lifecycle Actions (Pay Off Early & Delete) ──
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (!isFullyPaid) {
+                            Button(
+                                onClick = onPayAll,
+                                colors = ButtonDefaults.buttonColors(containerColor = Emerald500),
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                Text(
+                                    "✓ Pay Off All ($remainingCount mos)",
+                                    color = Surface950,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        } else {
+                            Text(
+                                "🎉 Fully Paid Early!",
+                                color = GreenSuccess,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        TextButton(
+                            onClick = { showDeleteConfirmDialog = true },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete Installment", tint = RedAlert, modifier = Modifier.size(14.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Delete Group", color = RedAlert, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                         }
                     }
                 }
@@ -505,3 +719,4 @@ private fun GroupedInstallmentRow(group: TransactionItem.InstallmentGroup, swipe
         }
     }
 }
+

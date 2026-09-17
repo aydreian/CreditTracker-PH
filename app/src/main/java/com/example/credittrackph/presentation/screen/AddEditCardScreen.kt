@@ -48,16 +48,16 @@ fun AddEditCardScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Add New Card", color = Color.White, fontWeight = FontWeight.Bold) },
+                title = { Text("Add New Card", color = appTextColor(), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = appTextColor())
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Surface900)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = appCardColor())
             )
         },
-        containerColor = Surface950
+        containerColor = appBackgroundColor()
     ) { padding ->
         Column(
             modifier = Modifier
@@ -137,11 +137,11 @@ fun AddEditCardScreen(
                     ExposedDropdownMenu(
                         expanded = bankExpanded,
                         onDismissRequest = { bankExpanded = false },
-                        modifier = Modifier.background(Surface800)
+                        modifier = Modifier.background(appCardColor())
                     ) {
                         Bank.entries.forEach { bank ->
                             DropdownMenuItem(
-                                text = { Text(bank.displayName, color = Color.White) },
+                                text = { Text(bank.displayName, color = appTextColor()) },
                                 onClick = { selectedBank = bank; bankExpanded = false }
                             )
                         }
@@ -196,7 +196,7 @@ fun AddEditCardScreen(
                     value = creditLimit,
                     onValueChange = { creditLimit = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("50000", color = Color.White.copy(0.4f)) },
+                    placeholder = { Text("50000", color = appTextSubColor().copy(0.4f)) },
                     colors = outlinedTextFieldColors(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true
@@ -210,7 +210,7 @@ fun AddEditCardScreen(
                         value = billingCutoffDay,
                         onValueChange = { if (it.length <= 2) billingCutoffDay = it },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("25", color = Color.White.copy(0.4f)) },
+                        placeholder = { Text("25", color = appTextSubColor().copy(0.4f)) },
                         colors = outlinedTextFieldColors(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true
@@ -221,7 +221,7 @@ fun AddEditCardScreen(
                         value = dueDay,
                         onValueChange = { if (it.length <= 2) dueDay = it },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("22", color = Color.White.copy(0.4f)) },
+                        placeholder = { Text("22", color = appTextSubColor().copy(0.4f)) },
                         colors = outlinedTextFieldColors(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true
@@ -264,18 +264,18 @@ fun AddEditCardScreen(
 @Composable
 fun FormSection(label: String, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(label, color = Color.White.copy(alpha = 0.7f), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+        Text(label, color = appTextSubColor(), fontSize = 13.sp, fontWeight = FontWeight.Medium)
         content()
     }
 }
 
 @Composable
 fun outlinedTextFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedTextColor = Color.White,
-    unfocusedTextColor = Color.White,
+    focusedTextColor = appTextColor(),
+    unfocusedTextColor = appTextColor(),
     focusedBorderColor = Emerald500,
-    unfocusedBorderColor = Surface700,
+    unfocusedBorderColor = appSurfaceColor(),
     cursorColor = Emerald500,
-    focusedContainerColor = Surface800,
-    unfocusedContainerColor = Surface800
+    focusedContainerColor = appCardColor(),
+    unfocusedContainerColor = appCardColor()
 )

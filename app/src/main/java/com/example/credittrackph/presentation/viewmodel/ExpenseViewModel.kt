@@ -167,7 +167,20 @@ class ExpenseViewModel @Inject constructor(
         viewModelScope.launch { expenseRepository.markAsPaid(expenseId) }
     }
 
+    fun markAsUnpaid(expenseId: Int) {
+        viewModelScope.launch { expenseRepository.markAsUnpaid(expenseId) }
+    }
+
+    fun payOffInstallmentGroup(merchantName: String, purchaseDate: Long) {
+        viewModelScope.launch { expenseRepository.markInstallmentGroupAsPaid(merchantName, purchaseDate) }
+    }
+
+    fun deleteInstallmentGroup(merchantName: String, purchaseDate: Long) {
+        viewModelScope.launch { expenseRepository.deleteInstallmentGroup(merchantName, purchaseDate) }
+    }
+
     fun deleteExpense(expense: ExpenseEntity) {
         viewModelScope.launch { expenseRepository.deleteExpense(expense) }
     }
 }
+

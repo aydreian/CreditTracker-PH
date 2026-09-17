@@ -42,9 +42,22 @@ interface ExpenseDao {
     @Query("UPDATE expenses SET isPaid = 1 WHERE id = :expenseId")
     suspend fun markAsPaid(expenseId: Int)
 
+    @Query("UPDATE expenses SET isPaid = 0 WHERE id = :expenseId")
+    suspend fun markAsUnpaid(expenseId: Int)
+
+    @Query("UPDATE expenses SET isPaid = 1 WHERE purchaseDate = :purchaseDate AND merchantName = :merchantName")
+    suspend fun markInstallmentGroupAsPaid(purchaseDate: Long, merchantName: String)
+
+    @Query("DELETE FROM expenses WHERE purchaseDate = :purchaseDate AND merchantName = :merchantName")
+    suspend fun deleteInstallmentGroup(purchaseDate: Long, merchantName: String)
+
+    @Query("SELECT * FROM expenses WHERE id = :id LIMIT 1")
+    suspend fun getExpenseById(id: Int): ExpenseEntity?
+
     @Query("SELECT SUM(monthlyAmortization) FROM expenses WHERE cardId = :cardId AND isPaid = 0")
     fun getTotalOutstandingByCard(cardId: Int): Flow<Double?>
 
     @Query("SELECT SUM(monthlyAmortization) FROM expenses WHERE isPaid = 0")
     fun getTotalOutstanding(): Flow<Double?>
 }
+

@@ -23,6 +23,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.credittrackph.data.db.entity.CardEntity
 import com.example.credittrackph.data.model.CardType
+import com.example.credittrackph.presentation.components.BankLogo
+import com.example.credittrackph.presentation.components.CardNetworkLogo
 import com.example.credittrackph.presentation.viewmodel.CardViewModel
 import com.example.credittrackph.theme.*
 
@@ -38,7 +40,7 @@ fun WalletScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Surface950)
+            .background(appBackgroundColor())
     ) {
         // ── Header ──
         Row(
@@ -58,7 +60,7 @@ fun WalletScreen(
                 )
                 Text(
                     "Wallet",
-                    color = Color.White,
+                    color = appTextColor(),
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -76,7 +78,7 @@ fun WalletScreen(
         // Card count summary
         Text(
             "${cards.size} card${if (cards.size != 1) "s" else ""} • Total Limit: ₱%,.0f".format(totalCreditLimit),
-            color = Color.White.copy(alpha = 0.5f),
+            color = appTextSubColor(),
             fontSize = 12.sp,
             modifier = Modifier.padding(horizontal = 20.dp)
         )
@@ -92,10 +94,10 @@ fun WalletScreen(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("💳", fontSize = 64.sp)
                     Spacer(Modifier.height(16.dp))
-                    Text("No cards yet", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                    Text("No cards yet", color = appTextColor(), fontWeight = FontWeight.Bold, fontSize = 20.sp)
                     Text(
                         "Tap + to add your first credit card",
-                        color = Color.White.copy(alpha = 0.5f),
+                        color = appTextSubColor(),
                         fontSize = 14.sp
                     )
                     Spacer(Modifier.height(24.dp))
@@ -118,7 +120,7 @@ fun WalletScreen(
                     .padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(bottom = 20.dp)
+                contentPadding = PaddingValues(bottom = 80.dp)
             ) {
                 items(cards, key = { it.id }) { card ->
                     WalletCardItem(
@@ -177,18 +179,13 @@ fun WalletCardItem(card: CardEntity, modifier: Modifier = Modifier, onClick: () 
                     .padding(16.dp),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                // Top row: Bank name + menu
+                // Top row: Bank logo + menu
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        card.bank.shortCode,
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    )
+                    BankLogo(card.bank)
                     Box(
                         modifier = Modifier
                             .size(28.dp)
@@ -257,29 +254,9 @@ fun WalletCardItem(card: CardEntity, modifier: Modifier = Modifier, onClick: () 
                         fontSize = 11.sp,
                         letterSpacing = 1.sp
                     )
-                    WalletCardTypeBadge(card.cardType)
+                    CardNetworkLogo(card.cardType)
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun WalletCardTypeBadge(cardType: CardType) {
-    val text = when (cardType) {
-        CardType.VISA -> "VISA"
-        CardType.MASTERCARD -> "MC"
-        CardType.JCB -> "JCB"
-        CardType.AMEX -> "AMEX"
-        CardType.OTHER -> ""
-    }
-    if (text.isNotEmpty()) {
-        Box(
-            modifier = Modifier
-                .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
-                .padding(horizontal = 6.dp, vertical = 2.dp)
-        ) {
-            Text(text, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 10.sp)
         }
     }
 }

@@ -1,9 +1,14 @@
 package com.example.credittrackph
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -17,7 +22,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -51,6 +59,8 @@ sealed class Screen {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainNavigation(
+    isDarkTheme: Boolean = true,
+    onToggleTheme: () -> Unit = {},
     profileViewModel: ProfileViewModel = hiltViewModel()
 ) {
     var selectedTab by remember { mutableStateOf(BottomTab.HOME) }
@@ -86,13 +96,14 @@ fun MainNavigation(
     }
 
     Scaffold(
-        containerColor = Surface950,
+        containerColor = appBackgroundColor(),
         bottomBar = {
-            if (!hasOverlay) {
+            if (!hasOverlay && !showFinancier) {
                 BottomNavBar(
                     selectedTab = selectedTab,
                     onTabSelected = { selectedTab = it },
-                    onFabClick = { showFabMenu = true }
+                    onFabClick = { showFabMenu = !showFabMenu },
+                    isFabExpanded = showFabMenu
                 )
             }
         }
@@ -102,7 +113,7 @@ fun MainNavigation(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(if (!hasOverlay) padding else PaddingValues(0.dp))
+                    .padding(if (!hasOverlay && !showFinancier) padding else PaddingValues(0.dp))
             ) {
                 AnimatedContent(
                     targetState = selectedTab,
@@ -116,7 +127,9 @@ fun MainNavigation(
                             onViewAllTransactions = { selectedTab = BottomTab.TRANSACTIONS },
                             onViewWallet = { selectedTab = BottomTab.WALLET },
                             onCardClick = { card -> pushScreen(Screen.CardDetail(card)) },
-                            onAiClick = { showFinancier = true }
+                            onAiClick = { showFinancier = true },
+                            isDarkTheme = isDarkTheme,
+                            onToggleTheme = onToggleTheme
                         )
                         BottomTab.TRANSACTIONS -> TransactionsScreen()
                         BottomTab.STATISTICS -> AnalyticsScreen()
@@ -160,6 +173,17 @@ fun MainNavigation(
                     }
                 }
             }
+
+            // ── Financier AI Chat Screen (Full-Screen Animated Overlay) ──
+            AnimatedVisibility(
+                visible = showFinancier,
+                enter = slideInVertically(initialOffsetY = { it }, animationSpec = tween(350, easing = FastOutSlowInEasing)) + fadeIn(),
+                exit = slideOutVertically(targetOffsetY = { it }, animationSpec = tween(300, easing = FastOutSlowInEasing)) + fadeOut()
+            ) {
+                FinancierChatSheet(
+                    onDismiss = { showFinancier = false }
+                )
+            }
         }
     }
 
@@ -192,44 +216,71 @@ fun MainNavigation(
             }
         )
     }
-
-    // ── Financier AI Chat Sheet ──
-    if (showFinancier) {
-        FinancierChatSheet(
-            onDismiss = { showFinancier = false }
-        )
-    }
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Floating Bottom Navigation Bar with Center FAB
+// Floating Bottom Navigation Bar with Center Rotating FAB
 // ═══════════════════════════════════════════════════════════════
 
 @Composable
 fun BottomNavBar(
     selectedTab: BottomTab,
     onTabSelected: (BottomTab) -> Unit,
-    onFabClick: () -> Unit
+    onFabClick: () -> Unit,
+    isFabExpanded: Boolean = false
 ) {
+    val isDark = LocalIsDarkTheme.current
+    var touchX by remember { mutableStateOf<Float?>(null) }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 24.dp)
+            .padding(horizontal = 24.dp, vertical = 20.dp)
             .height(72.dp)
             .navigationBarsPadding(),
         contentAlignment = Alignment.Center
     ) {
-        // ── Floating Frosted Glass Background ──
+        // ── Floating Frosted Glass Background with touch/drag tracking ──
         Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = Surface900.copy(alpha = 0.85f),
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragStart = { offset ->
+                            touchX = offset.x
+                        },
+                        onDragEnd = {
+                            val finalX = touchX
+                            touchX = null
+                            if (finalX != null) {
+                                val slotWidth = size.width / 5f
+                                val targetSlot = (finalX / slotWidth).toInt().coerceIn(0, 4)
+                                when (targetSlot) {
+                                    0 -> onTabSelected(BottomTab.HOME)
+                                    1 -> onTabSelected(BottomTab.TRANSACTIONS)
+                                    2 -> onFabClick()
+                                    3 -> onTabSelected(BottomTab.STATISTICS)
+                                    4 -> onTabSelected(BottomTab.WALLET)
+                                }
+                            }
+                        },
+                        onDragCancel = {
+                            touchX = null
+                        },
+                        onHorizontalDrag = { change, _ ->
+                            change.consume()
+                            touchX = change.position.x
+                        }
+                    )
+                },
+            color = if (isDark) Surface900.copy(alpha = 0.90f) else Color.White.copy(alpha = 0.96f),
             shape = RoundedCornerShape(36.dp),
-            shadowElevation = 8.dp
+            shadowElevation = 10.dp,
+            border = BorderStroke(1.dp, if (isDark) Surface700.copy(alpha = 0.4f) else Color(0xFFE2E8F0))
         ) {
             BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                 val itemWidth = maxWidth / 5
-                
-                // ── Animated Selection Circle ──
+
                 // Map the 4 tabs to their grid slot (0, 1, 3, 4). Slot 2 is the FAB.
                 val selectedSlot = when (selectedTab) {
                     BottomTab.HOME -> 0
@@ -237,16 +288,26 @@ fun BottomNavBar(
                     BottomTab.STATISTICS -> 3
                     BottomTab.WALLET -> 4
                 }
-                
-                val indicatorOffset by androidx.compose.animation.core.animateDpAsState(
-                    targetValue = itemWidth * selectedSlot,
-                    animationSpec = androidx.compose.animation.core.spring(
-                        dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
-                        stiffness = androidx.compose.animation.core.Spring.StiffnessLow
-                    ), label = "indicator"
+
+                val targetOffset = if (touchX != null) {
+                    with(LocalDensity.current) {
+                        (touchX!! - (itemWidth.toPx() / 2f)).toDp().coerceIn(0.dp, maxWidth - itemWidth)
+                    }
+                } else {
+                    itemWidth * selectedSlot
+                }
+
+                // Smooth glide without rushing or wild bouncing
+                val indicatorOffset by animateDpAsState(
+                    targetValue = targetOffset,
+                    animationSpec = tween(
+                        durationMillis = if (touchX != null) 0 else 350,
+                        easing = FastOutSlowInEasing
+                    ),
+                    label = "indicator"
                 )
 
-                // The glowing circle behind the active icon
+                // Glowing circular indicator behind active icon
                 Box(
                     modifier = Modifier
                         .offset(x = indicatorOffset)
@@ -257,7 +318,10 @@ fun BottomNavBar(
                     Box(
                         modifier = Modifier
                             .size(48.dp)
-                            .background(Emerald500.copy(alpha = 0.2f), CircleShape)
+                            .background(
+                                if (isDark) Emerald500.copy(alpha = 0.22f) else Color(0xFF0284C7).copy(alpha = 0.16f),
+                                CircleShape
+                            )
                     )
                 }
 
@@ -280,10 +344,10 @@ fun BottomNavBar(
                             onClick = { onTabSelected(BottomTab.TRANSACTIONS) }
                         )
                     }
-                    
-                    // Center FAB Spacer
+
+                    // Center FAB Spacer (Slot 2)
                     Spacer(Modifier.width(itemWidth))
-                    
+
                     Box(modifier = Modifier.width(itemWidth), contentAlignment = Alignment.Center) {
                         BottomNavItem(
                             tab = BottomTab.STATISTICS,
@@ -302,7 +366,13 @@ fun BottomNavBar(
             }
         }
 
-        // ── Center FAB (Overlapping the nav bar) ──
+        // ── Smooth Rotating Center FAB (+ to ×) ──
+        val fabRotation by animateFloatAsState(
+            targetValue = if (isFabExpanded) 45f else 0f,
+            animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+            label = "fabRotation"
+        )
+
         FloatingActionButton(
             onClick = onFabClick,
             modifier = Modifier
@@ -316,9 +386,11 @@ fun BottomNavBar(
         ) {
             Icon(
                 Icons.Default.Add,
-                contentDescription = "Add",
+                contentDescription = if (isFabExpanded) "Close Menu" else "Add Action",
                 tint = Surface950,
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier
+                    .size(32.dp)
+                    .graphicsLayer(rotationZ = fabRotation)
             )
         }
     }
@@ -337,14 +409,14 @@ private fun BottomNavItem(tab: BottomTab, isSelected: Boolean, onClick: () -> Un
         Icon(
             tab.icon,
             contentDescription = tab.label,
-            tint = if (isSelected) Emerald400 else BottomNavUnselected,
+            tint = if (isSelected) appPrimaryColor() else appTextSubColor().copy(alpha = 0.6f),
             modifier = Modifier.size(24.dp)
         )
     }
 }
 
 // ═══════════════════════════════════════════════════════════════
-// FAB Menu Overlay (Add Card / Add Transaction / Add Profile)
+// FAB Menu Overlay with Staggered Entrance Animations
 // ═══════════════════════════════════════════════════════════════
 
 @Composable
@@ -354,10 +426,15 @@ fun FabMenuOverlay(
     onAddTransaction: () -> Unit,
     onAddProfile: () -> Unit
 ) {
+    var isVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        isVisible = true
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.5f))
+            .background(Color.Black.copy(alpha = 0.55f))
             .clickable(
                 indication = null,
                 interactionSource = remember { MutableInteractionSource() }
@@ -366,25 +443,48 @@ fun FabMenuOverlay(
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 110.dp),
+                .padding(bottom = 112.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            FabMenuItem(
-                icon = Icons.Default.PersonAdd,
-                label = "Add Profile",
-                onClick = onAddProfile
-            )
-            FabMenuItem(
-                icon = Icons.Default.CreditCard,
-                label = "Add Card",
-                onClick = onAddCard
-            )
-            FabMenuItem(
-                icon = Icons.Default.Receipt,
-                label = "Add Transaction",
-                onClick = onAddTransaction
-            )
+            // Item 1: Add Profile
+            AnimatedVisibility(
+                visible = isVisible,
+                enter = fadeIn(animationSpec = tween(250, delayMillis = 100)) +
+                        slideInVertically(initialOffsetY = { 80 }, animationSpec = tween(250, delayMillis = 100))
+            ) {
+                FabMenuItem(
+                    icon = Icons.Default.PersonAdd,
+                    label = "Add Profile",
+                    onClick = onAddProfile
+                )
+            }
+
+            // Item 2: Add Card
+            AnimatedVisibility(
+                visible = isVisible,
+                enter = fadeIn(animationSpec = tween(250, delayMillis = 50)) +
+                        slideInVertically(initialOffsetY = { 80 }, animationSpec = tween(250, delayMillis = 50))
+            ) {
+                FabMenuItem(
+                    icon = Icons.Default.CreditCard,
+                    label = "Add Card",
+                    onClick = onAddCard
+                )
+            }
+
+            // Item 3: Add Transaction
+            AnimatedVisibility(
+                visible = isVisible,
+                enter = fadeIn(animationSpec = tween(250)) +
+                        slideInVertically(initialOffsetY = { 80 }, animationSpec = tween(250))
+            ) {
+                FabMenuItem(
+                    icon = Icons.Default.Receipt,
+                    label = "Add Transaction",
+                    onClick = onAddTransaction
+                )
+            }
         }
     }
 }
@@ -392,19 +492,19 @@ fun FabMenuOverlay(
 @Composable
 private fun FabMenuItem(icon: ImageVector, label: String, onClick: () -> Unit) {
     Surface(
-        modifier = Modifier
-            .clickable { onClick() },
-        color = Surface800,
+        modifier = Modifier.clickable { onClick() },
+        color = appCardColor(),
         shape = RoundedCornerShape(28.dp),
-        shadowElevation = 8.dp
+        shadowElevation = 8.dp,
+        border = BorderStroke(1.dp, appSurfaceColor().copy(alpha = 0.4f))
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+            modifier = Modifier.padding(horizontal = 22.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Icon(icon, contentDescription = null, tint = Emerald400, modifier = Modifier.size(20.dp))
-            Text(label, color = Color.White, fontWeight = FontWeight.Medium, fontSize = 14.sp)
+            Text(label, color = appTextColor(), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
         }
     }
 }
@@ -419,10 +519,10 @@ fun MainUserSetupDialog(onNameSubmitted: (String) -> Unit) {
     var name by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = { /* Block dismiss */ },
-        title = { Text("Welcome to CreditTrack!", color = Color.White) },
+        title = { Text("Welcome to CreditTrack!", color = appTextColor(), fontWeight = FontWeight.Bold) },
         text = {
             Column {
-                Text("Who is the main user of this app?", color = Color.White.copy(0.7f))
+                Text("Who is the main user of this app?", color = appTextSubColor())
                 Spacer(Modifier.height(16.dp))
                 OutlinedTextField(
                     value = name,
@@ -430,13 +530,14 @@ fun MainUserSetupDialog(onNameSubmitted: (String) -> Unit) {
                     label = { Text("Your Name") },
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
+                        focusedTextColor = appTextColor(),
+                        unfocusedTextColor = appTextColor(),
                         cursorColor = Emerald400,
                         focusedBorderColor = Emerald400,
-                        unfocusedBorderColor = Color.White.copy(0.3f),
+                        unfocusedBorderColor = appTextSubColor().copy(alpha = 0.4f),
                         focusedLabelColor = Emerald400
-                    )
+                    ),
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         },
@@ -445,10 +546,10 @@ fun MainUserSetupDialog(onNameSubmitted: (String) -> Unit) {
                 onClick = { if (name.isNotBlank()) onNameSubmitted(name.trim()) },
                 colors = ButtonDefaults.buttonColors(containerColor = Emerald500)
             ) {
-                Text("Let's Go!", color = Surface950)
+                Text("Let's Go!", color = Surface950, fontWeight = FontWeight.Bold)
             }
         },
-        containerColor = Surface800
+        containerColor = appCardColor()
     )
 }
 
@@ -458,10 +559,10 @@ fun AddProfileDialog(onDismiss: () -> Unit, onNameSubmitted: (String) -> Unit) {
     var name by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add Profile", color = Color.White) },
+        title = { Text("Add Profile", color = appTextColor(), fontWeight = FontWeight.Bold) },
         text = {
             Column {
-                Text("Enter the name of the family member.", color = Color.White.copy(0.7f))
+                Text("Enter the name of the family member or user.", color = appTextSubColor())
                 Spacer(Modifier.height(16.dp))
                 OutlinedTextField(
                     value = name,
@@ -469,13 +570,14 @@ fun AddProfileDialog(onDismiss: () -> Unit, onNameSubmitted: (String) -> Unit) {
                     label = { Text("Name") },
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
+                        focusedTextColor = appTextColor(),
+                        unfocusedTextColor = appTextColor(),
                         cursorColor = Emerald400,
                         focusedBorderColor = Emerald400,
-                        unfocusedBorderColor = Color.White.copy(0.3f),
+                        unfocusedBorderColor = appTextSubColor().copy(alpha = 0.4f),
                         focusedLabelColor = Emerald400
-                    )
+                    ),
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         },
@@ -484,15 +586,15 @@ fun AddProfileDialog(onDismiss: () -> Unit, onNameSubmitted: (String) -> Unit) {
                 onClick = { if (name.isNotBlank()) { onNameSubmitted(name.trim()); onDismiss() } },
                 colors = ButtonDefaults.buttonColors(containerColor = Emerald500)
             ) {
-                Text("Save", color = Surface950)
+                Text("Save", color = Surface950, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = Color.White.copy(0.7f))
+                Text("Cancel", color = appTextSubColor())
             }
         },
-        containerColor = Surface800
+        containerColor = appCardColor()
     )
 }
 
@@ -513,19 +615,19 @@ fun CardPickerSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = Surface900
+        containerColor = appCardColor()
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Text(
                 "Select Card",
-                color = Color.White,
+                color = appTextColor(),
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp
             )
             Spacer(Modifier.height(4.dp))
             Text(
                 "Choose which card this transaction belongs to",
-                color = Color.White.copy(alpha = 0.5f),
+                color = appTextSubColor(),
                 fontSize = 13.sp
             )
             Spacer(Modifier.height(16.dp))
@@ -539,7 +641,7 @@ fun CardPickerSheet(
                 ) {
                     Text(
                         "No cards added yet.\nAdd a card first.",
-                        color = Color.White.copy(0.5f),
+                        color = appTextSubColor(),
                         fontSize = 14.sp
                     )
                 }
@@ -550,7 +652,7 @@ fun CardPickerSheet(
                             .fillMaxWidth()
                             .padding(vertical = 4.dp)
                             .clickable { onCardSelected(card) },
-                        colors = CardDefaults.cardColors(containerColor = Surface800),
+                        colors = CardDefaults.cardColors(containerColor = appSurfaceColor()),
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Row(
@@ -574,13 +676,17 @@ fun CardPickerSheet(
                             Column(Modifier.weight(1f)) {
                                 Text(
                                     card.label,
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Medium
+                                    color = appTextColor(),
+                                    fontWeight = FontWeight.Medium,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                 )
                                 Text(
                                     "${card.bank.displayName} • •••• ${card.lastFourDigits}",
-                                    color = Color.White.copy(0.5f),
-                                    fontSize = 12.sp
+                                    color = appTextSubColor(),
+                                    fontSize = 12.sp,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                 )
                             }
                             Icon(Icons.Default.ChevronRight, null, tint = Emerald400)

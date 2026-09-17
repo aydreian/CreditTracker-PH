@@ -7,8 +7,6 @@
     <uses-permission android:name="android.permission.READ_SMS" />
 
     <!-- Notifications -->
-    <uses-permission android:name="android.permission.RECEIVE_SMS" />
-    <uses-permission android:name="android.permission.READ_SMS" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- Biometric -->
@@ -21,6 +19,16 @@
 
     <!-- Internet for Groq API -->
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Audio recording for Voice Input (Speech-to-Text) -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- Queries for Speech Recognition services (Android 11+) -->
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
 
     <application
         android:name=".CreditTrackApp"

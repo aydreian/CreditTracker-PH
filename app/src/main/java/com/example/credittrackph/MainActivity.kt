@@ -13,10 +13,17 @@ import android.os.Build
 import androidx.activity.result.contract.ActivityResultContracts
 import com.example.credittrackph.notification.DueDateReminderWorker
 import com.example.credittrackph.theme.CreditTrackPHTheme
+import androidx.compose.runtime.*
+import androidx.lifecycle.lifecycleScope
+import com.example.credittrackph.util.PreferencesManager
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @Inject lateinit var preferencesManager: PreferencesManager
+
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -39,9 +46,20 @@ class MainActivity : ComponentActivity() {
         permissionLauncher.launch(permissionsToRequest.toTypedArray())
 
         setContent {
-            CreditTrackPHTheme {
+            val appTheme by preferencesManager.appTheme.collectAsState(initial = "DARK")
+            val isDark = appTheme != "LIGHT"
+            val scope = rememberCoroutineScope()
+
+            CreditTrackPHTheme(darkTheme = isDark) {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    MainNavigation()
+                    MainNavigation(
+                        isDarkTheme = isDark,
+                        onToggleTheme = {
+                            scope.launch {
+                                preferencesManager.setAppTheme(if (isDark) "LIGHT" else "DARK")
+                            }
+                        }
+                    )
                 }
             }
         }
