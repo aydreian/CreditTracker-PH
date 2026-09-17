@@ -14,6 +14,12 @@ A premium, AI-powered credit card installment tracker built for Filipino cardhol
 - **AI Undo & Reversal:** Easily reverse accidental payments through natural chat commands (*"undo that"*, *"mark as unpaid"*) or one-tap UI buttons.
 - **Smart Category Inference:** Automatically infers expense categories from Filipino brands and keywords (Jollibee, Grab, Angkas, Puregold, SM, Meralco, Mercury Drug, Shopee, Lazada, Uniqlo, etc.).
 
+### ⚡ AI Connectivity & Release Hardening (Stage 6)
+- **Zero-Exposure Security:** Securely injects `GROQ_API_KEY` from `local.properties` into `BuildConfig` at compile time so the release APK is connected to Groq out-of-the-box while keeping Git 100% clean and secret-free.
+- **R8 / ProGuard Protection:** Custom ProGuard keep rules ensure network serialization models are preserved during release obfuscation.
+- **High-Performance Models:** Powered by Groq's `openai/gpt-oss-20b` (primary) and `qwen/qwen3.8-27b` (fallback).
+- **In-App API Key Override:** Easily configure or change your Groq API key anytime via the in-app 🔑 Key dialog.
+
 ### 🏦 Multi-Card Management
 - Add and manage multiple credit cards from major Philippine banks (BPI, BDO, Metrobank, Security Bank, UnionBank, RCBC, EastWest, and more)
 - Authentic Philippine bank badges and card network logos (Mastercard, Visa, JCB, Amex)
