@@ -30,11 +30,11 @@ import com.example.credittrackph.presentation.viewmodel.ExpenseViewModel
 import com.example.credittrackph.theme.*
 import java.util.Calendar
 
-private val CategoryColors = listOf(
+private fun getCategoryColors(isDark: Boolean): List<Color> = listOf(
     Color(0xFFFF5252), // Red
     Color(0xFF38BDF8), // Sky Blue
     Color(0xFFFFB74D), // Amber / Orange
-    Color(0xFF10B981), // Emerald
+    if (isDark) Color(0xFF10B981) else Color(0xFF0284C7), // Emerald in dark, Financial Blue in light
     Color(0xFFAB47BC), // Purple
     Color(0xFF26C6DA), // Cyan
     Color(0xFFFF7043), // Deep Orange
@@ -53,6 +53,8 @@ data class CategoryStat(
 fun AnalyticsScreen(
     expenseViewModel: ExpenseViewModel = hiltViewModel()
 ) {
+    val isDark = LocalIsDarkTheme.current
+    val categoryColors = remember(isDark) { getCategoryColors(isDark) }
     val expenses by expenseViewModel.allExpenses.collectAsState()
 
     var timeFilter by remember { mutableStateOf("All Time") }
@@ -121,7 +123,7 @@ fun AnalyticsScreen(
             Column {
                 Text(
                     "CREDITTRACK PH",
-                    color = Emerald400,
+                    color = appPrimaryColor(),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.5.sp
@@ -137,7 +139,7 @@ fun AnalyticsScreen(
             // Share Card Button
             Surface(
                 modifier = Modifier.clickable { showSummaryCardDialog = true },
-                color = Emerald500.copy(alpha = 0.15f),
+                color = appSoftSuccessColor(),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Row(
@@ -145,8 +147,8 @@ fun AnalyticsScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Icon(Icons.Default.Share, contentDescription = "Share", tint = Emerald400, modifier = Modifier.size(16.dp))
-                    Text("Share Card", color = Emerald400, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Icon(Icons.Default.Share, contentDescription = "Share", tint = appPrimaryColor(), modifier = Modifier.size(16.dp))
+                    Text("Share Card", color = appPrimaryColor(), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -161,8 +163,8 @@ fun AnalyticsScreen(
                 onClick = { selectedViewMode = "Breakdown" },
                 label = { Text("📊 Category Breakdown", fontSize = 12.sp) },
                 colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = Emerald500,
-                    selectedLabelColor = Surface950
+                    selectedContainerColor = appAccentColor(),
+                    selectedLabelColor = appOnAccentColor()
                 )
             )
             FilterChip(
@@ -170,8 +172,8 @@ fun AnalyticsScreen(
                 onClick = { selectedViewMode = "Calendar" },
                 label = { Text("📅 Payment Calendar", fontSize = 12.sp) },
                 colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = Emerald500,
-                    selectedLabelColor = Surface950
+                    selectedContainerColor = appAccentColor(),
+                    selectedLabelColor = appOnAccentColor()
                 )
             )
         }
@@ -194,8 +196,8 @@ fun AnalyticsScreen(
                         onClick = { timeFilter = filter },
                         label = { Text(filter, fontSize = 12.sp) },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Emerald500,
-                            selectedLabelColor = Surface950
+                            selectedContainerColor = appAccentColor(),
+                            selectedLabelColor = appOnAccentColor()
                         )
                     )
                 }
@@ -227,7 +229,7 @@ fun AnalyticsScreen(
                         text = "Highest: ${topStat.category.emoji} ${topStat.category.displayName} (₱%,.2f)".format(topStat.totalAmount),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = Emerald400
+                        color = appPrimaryColor()
                     )
                 }
             }
@@ -278,7 +280,7 @@ fun AnalyticsScreen(
                             categoryTotals.forEachIndexed { index, stat ->
                                 val fullSweep = ((stat.totalAmount / totalSpend) * 360f).toFloat()
                                 val sweepAngle = fullSweep * animProgress.value
-                                val color = CategoryColors[index % CategoryColors.size]
+                                val color = categoryColors[index % categoryColors.size]
 
                                 drawArc(
                                     color = color,
@@ -312,7 +314,7 @@ fun AnalyticsScreen(
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         categoryTotals.forEachIndexed { index, stat ->
                             val percentage = (stat.totalAmount / totalSpend) * 100
-                            val color = CategoryColors[index % CategoryColors.size]
+                            val color = categoryColors[index % categoryColors.size]
 
                             Column(
                                 modifier = Modifier
@@ -342,7 +344,7 @@ fun AnalyticsScreen(
                                     Text(
                                         text = "₱%,.2f (%.1f%%)".format(stat.totalAmount, percentage),
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = Emerald400,
+                                        color = appPrimaryColor(),
                                         fontWeight = FontWeight.Bold
                                     )
                                 }

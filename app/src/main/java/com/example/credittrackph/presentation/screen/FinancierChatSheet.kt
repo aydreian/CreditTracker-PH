@@ -214,7 +214,7 @@ fun FinancierChatSheet(
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = appTextColor(),
                             unfocusedTextColor = appTextColor(),
-                            focusedBorderColor = Emerald400,
+                            focusedBorderColor = appPrimaryColor(),
                             unfocusedBorderColor = appTextSubColor().copy(alpha = 0.3f)
                         ),
                         modifier = Modifier.fillMaxWidth()
@@ -228,7 +228,7 @@ fun FinancierChatSheet(
                         showKeyDialog = false
                     }
                 ) {
-                    Text("Save Key", color = Emerald400, fontWeight = FontWeight.Bold)
+                    Text("Save Key", color = appPrimaryColor(), fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -262,14 +262,14 @@ fun FinancierChatSheet(
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = Emerald400
+                            tint = appPrimaryColor()
                         )
                     }
 
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             "🐶 FINANCIER",
-                            color = Emerald400,
+                            color = appPrimaryColor(),
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
@@ -296,7 +296,7 @@ fun FinancierChatSheet(
                             Icon(
                                 if (autoSpeakEnabled) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
                                 contentDescription = "Auto Speak",
-                                tint = if (autoSpeakEnabled) Emerald400 else appTextSubColor().copy(alpha = 0.5f)
+                                tint = if (autoSpeakEnabled) appPrimaryColor() else appTextSubColor().copy(alpha = 0.5f)
                             )
                         }
 
@@ -307,7 +307,7 @@ fun FinancierChatSheet(
                             Icon(
                                 Icons.Default.Key,
                                 contentDescription = "Groq API Key Settings",
-                                tint = Emerald400
+                                tint = appPrimaryColor()
                             )
                         }
                     }
@@ -366,7 +366,7 @@ fun FinancierChatSheet(
                                 .size(44.dp)
                                 .scale(if (isRecording) pulseScale else 1f)
                                 .background(
-                                    if (isRecording) RedAlert else Emerald500.copy(alpha = 0.15f),
+                                    if (isRecording) RedAlert else appSoftSuccessColor(),
                                     CircleShape
                                 )
                                 .pointerInput(isRecording) {
@@ -400,7 +400,7 @@ fun FinancierChatSheet(
                             Icon(
                                 if (isRecording) Icons.Default.Mic else Icons.Default.MicNone,
                                 contentDescription = "Hold or tap to speak",
-                                tint = if (isRecording) Color.White else Emerald400,
+                                tint = if (isRecording) Color.White else appPrimaryColor(),
                                 modifier = Modifier.size(22.dp)
                             )
                         }
@@ -457,20 +457,20 @@ fun FinancierChatSheet(
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(48.dp)
-                                    .background(Emerald500.copy(alpha = 0.12f), RoundedCornerShape(24.dp))
+                                    .background(appSoftSuccessColor(), RoundedCornerShape(24.dp))
                                     .padding(horizontal = 14.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center
                             ) {
                                 CircularProgressIndicator(
-                                    color = Emerald400,
+                                    color = appPrimaryColor(),
                                     modifier = Modifier.size(18.dp),
                                     strokeWidth = 2.dp
                                 )
                                 Spacer(Modifier.width(10.dp))
                                 Text(
                                     "✨ Whisper AI transcribing...",
-                                    color = Emerald400,
+                                    color = appPrimaryColor(),
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Medium
                                 )
@@ -485,7 +485,7 @@ fun FinancierChatSheet(
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedContainerColor = appSurfaceColor(),
                                     unfocusedContainerColor = appSurfaceColor(),
-                                    focusedBorderColor = Emerald500,
+                                    focusedBorderColor = appAccentColor(),
                                     unfocusedBorderColor = Color.Transparent,
                                     focusedTextColor = appTextColor(),
                                     unfocusedTextColor = appTextColor()
@@ -505,14 +505,14 @@ fun FinancierChatSheet(
                             modifier = Modifier
                                 .size(44.dp)
                                 .background(
-                                    if (isRecording || isTranscribing) appSurfaceColor() else Emerald500,
+                                    if (isRecording || isTranscribing) appSurfaceColor() else appAccentColor(),
                                     RoundedCornerShape(22.dp)
                                 )
                         ) {
                             Icon(
                                 Icons.AutoMirrored.Filled.Send,
                                 contentDescription = "Send",
-                                tint = if (isRecording || isTranscribing) appTextSubColor().copy(alpha = 0.4f) else Surface950
+                                tint = if (isRecording || isTranscribing) appTextSubColor().copy(alpha = 0.4f) else appOnAccentColor()
                             )
                         }
                     }
@@ -547,7 +547,7 @@ fun FinancierChatSheet(
             if (isLoading) {
                 Text(
                     "*Financier is sniffing around...*",
-                    color = Emerald400,
+                    color = appPrimaryColor(),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier
@@ -567,7 +567,7 @@ fun ChatBubble(
 ) {
     val isUser = message.role == "user"
     val align = if (isUser) Alignment.End else Alignment.Start
-    val bgColor = if (isUser) appCardColor() else Emerald500.copy(alpha = 0.15f)
+    val bgColor = if (isUser) appCardColor() else appSoftSuccessColor()
     val textColor = appTextColor()
     val shape = if (isUser) {
         RoundedCornerShape(20.dp, 20.dp, 4.dp, 20.dp)
@@ -589,7 +589,7 @@ fun ChatBubble(
             ) {
                 Text(
                     "Financier",
-                    color = Emerald400,
+                    color = appPrimaryColor(),
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -600,7 +600,7 @@ fun ChatBubble(
                     Icon(
                         if (isSpeaking) Icons.Default.Stop else Icons.Default.VolumeUp,
                         contentDescription = "Read Aloud",
-                        tint = if (isSpeaking) Emerald400 else appTextSubColor().copy(alpha = 0.6f),
+                        tint = if (isSpeaking) appPrimaryColor() else appTextSubColor().copy(alpha = 0.6f),
                         modifier = Modifier.size(14.dp)
                     )
                 }

@@ -32,6 +32,7 @@ fun CardDetailScreen(
     card: CardEntity,
     onBack: () -> Unit,
     onAddExpense: () -> Unit,
+    onEditCard: (CardEntity) -> Unit = {},
     viewModel: ExpenseViewModel = hiltViewModel()
 ) {
     LaunchedEffect(card.id) { viewModel.selectCard(card.id) }
@@ -62,8 +63,11 @@ fun CardDetailScreen(
                     IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, null, tint = appTextColor()) }
                 },
                 actions = {
+                    IconButton(onClick = { onEditCard(card) }) {
+                        Icon(Icons.Default.Edit, "Edit Card", tint = appPrimaryColor())
+                    }
                     IconButton(onClick = onAddExpense) {
-                        Icon(Icons.Default.Add, "Add Expense", tint = Emerald400)
+                        Icon(Icons.Default.Add, "Add Expense", tint = appPrimaryColor())
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = appCardColor())
@@ -116,14 +120,14 @@ fun CardDetailScreen(
                         selected = filterYear == null,
                         onClick = { viewModel.clearFilter() },
                         label = { Text("All") },
-                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Emerald500, selectedLabelColor = Surface950)
+                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = appAccentColor(), selectedLabelColor = if (LocalIsDarkTheme.current) Surface950 else Color.White)
                     )
                     years.forEach { year ->
                         FilterChip(
                             selected = filterYear == year,
                             onClick = { viewModel.setFilter(year, filterMonth ?: months[Calendar.getInstance().get(Calendar.MONTH)]) },
                             label = { Text(year) },
-                            colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Emerald500, selectedLabelColor = Surface950)
+                            colors = FilterChipDefaults.filterChipColors(selectedContainerColor = appAccentColor(), selectedLabelColor = if (LocalIsDarkTheme.current) Surface950 else Color.White)
                         )
                     }
                 }
@@ -139,7 +143,7 @@ fun CardDetailScreen(
                                 selected = filterMonth == months[index],
                                 onClick = { viewModel.setFilter(filterYear, months[index]) },
                                 label = { Text(name, fontSize = 12.sp) },
-                                colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Emerald500, selectedLabelColor = Surface950)
+                                colors = FilterChipDefaults.filterChipColors(selectedContainerColor = appAccentColor(), selectedLabelColor = if (LocalIsDarkTheme.current) Surface950 else Color.White)
                             )
                         }
                     }
@@ -186,10 +190,10 @@ fun ExpenseRow(expense: ExpenseEntity, onMarkPaid: () -> Unit, onDelete: () -> U
     val now = System.currentTimeMillis()
     val daysLeft = ((expense.dueDate - now) / (24 * 60 * 60 * 1000L)).toInt()
     val statusColor = when {
-        expense.isPaid -> GreenSuccess
+        expense.isPaid -> appSuccessColor()
         daysLeft < 0 -> RedAlert
         daysLeft <= 3 -> YellowWarn
-        else -> Color.White.copy(0.8f)
+        else -> appTextColor().copy(0.8f)
     }
     var showMenu by remember { mutableStateOf(false) }
     var isExpanded by remember { mutableStateOf(false) }
@@ -236,13 +240,13 @@ fun ExpenseRow(expense: ExpenseEntity, onMarkPaid: () -> Unit, onDelete: () -> U
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 "Installment ${expense.currentInstallmentMonth}/${expense.totalInstallmentMonths} • $interestLabel",
-                                color = Emerald400, fontSize = 10.sp, fontWeight = FontWeight.Bold
+                                color = appPrimaryColor(), fontSize = 10.sp, fontWeight = FontWeight.Bold
                             )
                             Spacer(Modifier.width(4.dp))
                             Icon(
                                 imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                                 contentDescription = "Expand details",
-                                tint = Emerald400,
+                                tint = appPrimaryColor(),
                                 modifier = Modifier.size(14.dp)
                             )
                         }
@@ -263,7 +267,7 @@ fun ExpenseRow(expense: ExpenseEntity, onMarkPaid: () -> Unit, onDelete: () -> U
                             color = statusColor, fontSize = 10.sp
                         )
                     } else {
-                        Text("✓ Paid", color = GreenSuccess, fontSize = 10.sp)
+                        Text("✓ Paid", color = appSuccessColor(), fontSize = 10.sp)
                     }
 
                     Box {
@@ -273,7 +277,7 @@ fun ExpenseRow(expense: ExpenseEntity, onMarkPaid: () -> Unit, onDelete: () -> U
                         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }, modifier = Modifier.background(appCardColor())) {
                             if (!expense.isPaid) {
                                 DropdownMenuItem(
-                                    text = { Text("✓ Mark as Paid", color = GreenSuccess) },
+                                    text = { Text("✓ Mark as Paid", color = appSuccessColor()) },
                                     onClick = { onMarkPaid(); showMenu = false }
                                 )
                             }
@@ -315,7 +319,7 @@ fun ExpenseRow(expense: ExpenseEntity, onMarkPaid: () -> Unit, onDelete: () -> U
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text("Monthly Amortization:", color = appTextSubColor(), fontSize = 11.sp)
-                        Text("₱%,.2f / mo".format(expense.monthlyAmortization), color = Emerald400, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text("₱%,.2f / mo".format(expense.monthlyAmortization), color = appPrimaryColor(), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
 
                     Row(
@@ -323,7 +327,7 @@ fun ExpenseRow(expense: ExpenseEntity, onMarkPaid: () -> Unit, onDelete: () -> U
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text("Total Interest Cost:", color = appTextSubColor(), fontSize = 11.sp)
-                        Text("₱%,.2f".format(expense.totalInterest), color = if (expense.totalInterest > 0) RedAlert else GreenSuccess, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text("₱%,.2f".format(expense.totalInterest), color = if (expense.totalInterest > 0) RedAlert else appSuccessColor(), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
 
                     Spacer(Modifier.height(8.dp))
@@ -336,14 +340,14 @@ fun ExpenseRow(expense: ExpenseEntity, onMarkPaid: () -> Unit, onDelete: () -> U
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 2.dp)
-                                .background(if (isCurrent) Emerald500.copy(0.15f) else Color.Transparent, RoundedCornerShape(4.dp))
+                                .background(if (isCurrent) appSoftSuccessColor() else Color.Transparent, RoundedCornerShape(4.dp))
                                 .padding(horizontal = 6.dp, vertical = 2.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
                                 text = "Month $m of ${expense.totalInstallmentMonths}${if (isCurrent) " (Current)" else ""}",
-                                color = if (isCurrent) Emerald400 else appTextSubColor(),
+                                color = if (isCurrent) appPrimaryColor() else appTextSubColor(),
                                 fontSize = 11.sp,
                                 fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal
                             )

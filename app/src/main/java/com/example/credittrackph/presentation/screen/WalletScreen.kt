@@ -53,7 +53,7 @@ fun WalletScreen(
             Column {
                 Text(
                     "CREDITTRACK PH",
-                    color = Emerald400,
+                    color = appPrimaryColor(),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.5.sp
@@ -69,9 +69,9 @@ fun WalletScreen(
                 onClick = onAddCard,
                 modifier = Modifier
                     .size(44.dp)
-                    .background(Emerald500, CircleShape)
+                    .background(appFabContainerColor(), CircleShape)
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Card", tint = Surface950)
+                Icon(Icons.Default.Add, contentDescription = "Add Card", tint = appOnAccentColor())
             }
         }
 
@@ -103,11 +103,11 @@ fun WalletScreen(
                     Spacer(Modifier.height(24.dp))
                     Button(
                         onClick = onAddCard,
-                        colors = ButtonDefaults.buttonColors(containerColor = Emerald500)
+                        colors = ButtonDefaults.buttonColors(containerColor = appAccentColor())
                     ) {
-                        Icon(Icons.Default.Add, null, tint = Surface950)
+                        Icon(Icons.Default.Add, null, tint = appOnAccentColor())
                         Spacer(Modifier.width(8.dp))
-                        Text("Add Card", color = Surface950, fontWeight = FontWeight.Bold)
+                        Text("Add Card", color = appOnAccentColor(), fontWeight = FontWeight.Bold)
                     }
                 }
             }

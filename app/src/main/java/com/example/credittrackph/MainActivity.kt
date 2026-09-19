@@ -26,11 +26,7 @@ import androidx.fragment.app.FragmentActivity
 import com.example.credittrackph.notification.BudgetAlertWorker
 import com.example.credittrackph.notification.DueDateReminderWorker
 import com.example.credittrackph.security.BiometricAuthManager
-import com.example.credittrackph.theme.CreditTrackPHTheme
-import com.example.credittrackph.theme.Emerald400
-import com.example.credittrackph.theme.Emerald500
-import com.example.credittrackph.theme.Surface900
-import com.example.credittrackph.theme.Surface950
+import com.example.credittrackph.theme.*
 import com.example.credittrackph.util.PreferencesManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -122,7 +118,7 @@ private fun LockScreen(onUnlockClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Surface950)
+            .background(appBackgroundColor())
             .padding(24.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -133,13 +129,13 @@ private fun LockScreen(onUnlockClick: () -> Unit) {
             Box(
                 modifier = Modifier
                     .size(90.dp)
-                    .background(Emerald500.copy(alpha = 0.15f), CircleShape),
+                    .background(appSoftSuccessColor(), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     Icons.Default.Lock,
                     contentDescription = "Locked",
-                    tint = Emerald400,
+                    tint = appPrimaryColor(),
                     modifier = Modifier.size(44.dp)
                 )
             }
@@ -148,7 +144,7 @@ private fun LockScreen(onUnlockClick: () -> Unit) {
 
             Text(
                 "CreditTrack PH",
-                color = Color.White,
+                color = appTextColor(),
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -157,7 +153,7 @@ private fun LockScreen(onUnlockClick: () -> Unit) {
 
             Text(
                 "Biometric lock active.\nUnlock to view your credit cards & dues.",
-                color = Color.White.copy(alpha = 0.65f),
+                color = appTextSubColor(),
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center
             )
@@ -166,17 +162,17 @@ private fun LockScreen(onUnlockClick: () -> Unit) {
 
             Button(
                 onClick = onUnlockClick,
-                colors = ButtonDefaults.buttonColors(containerColor = Emerald500),
+                colors = ButtonDefaults.buttonColors(containerColor = appAccentColor()),
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier
                     .fillMaxWidth(0.7f)
                     .height(52.dp)
             ) {
-                Icon(Icons.Default.Fingerprint, contentDescription = null, tint = Surface950)
+                Icon(Icons.Default.Fingerprint, contentDescription = null, tint = appOnAccentColor())
                 Spacer(Modifier.width(8.dp))
                 Text(
                     "Unlock with Biometrics",
-                    color = Surface950,
+                    color = appOnAccentColor(),
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp
                 )

@@ -77,9 +77,9 @@ fun AddEditExpenseScreen(
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let { purchaseDateMs = it }
                     showDatePicker = false
-                }) { Text("OK", color = Emerald500) }
+                }) { Text("OK", color = appAccentColor()) }
             },
-            dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text("Cancel", color = Color.White.copy(0.5f)) } }
+            dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text("Cancel", color = appTextSubColor()) } }
         ) {
             DatePicker(state = datePickerState)
         }
@@ -115,7 +115,7 @@ fun AddEditExpenseScreen(
                     modifier = Modifier.padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.CreditCard, null, tint = Emerald400)
+                    Icon(Icons.Default.CreditCard, null, tint = appPrimaryColor())
                     Spacer(Modifier.width(8.dp))
                     Text("${card.label} •••• ${card.lastFourDigits}", color = appTextColor(), fontWeight = FontWeight.Medium)
                 }
@@ -139,14 +139,14 @@ fun AddEditExpenseScreen(
                                 val inferred = inferExpenseCategory(qm)
                                 selectedCategory = if (inferred != ExpenseCategory.OTHER) inferred else selectedCategory
                             },
-                            color = if (merchant == qm) Emerald500 else appSurfaceColor(),
+                            color = if (merchant == qm) appAccentColor() else appSurfaceColor(),
                             shape = RoundedCornerShape(20.dp),
-                            border = BorderStroke(1.dp, if (merchant == qm) Emerald500 else appSurfaceColor())
+                            border = BorderStroke(1.dp, if (merchant == qm) appAccentColor() else appBorderColor())
                         ) {
                             Text(
                                 qm,
                                 fontSize = 12.sp,
-                                color = if (merchant == qm) Surface950 else appTextColor(),
+                                color = if (merchant == qm) appOnAccentColor() else appTextColor(),
                                 fontWeight = if (merchant == qm) FontWeight.Bold else FontWeight.Normal,
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                             )
@@ -182,7 +182,7 @@ fun AddEditExpenseScreen(
                     placeholder = { Text("0.00", color = appTextSubColor().copy(0.4f)) },
                     colors = outlinedTextFieldColors(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    leadingIcon = { Text("₱", color = Emerald400, fontWeight = FontWeight.Bold) },
+                    leadingIcon = { Text("₱", color = appPrimaryColor(), fontWeight = FontWeight.Bold) },
                     singleLine = true
                 )
             }
@@ -234,8 +234,8 @@ fun AddEditExpenseScreen(
                             },
                             label = { Text("${cat.emoji} ${cat.displayName}", fontSize = 12.sp) },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = Emerald500,
-                                selectedLabelColor = Surface950
+                                selectedContainerColor = appAccentColor(),
+                                selectedLabelColor = appOnAccentColor()
                             )
                         )
                     }
@@ -250,7 +250,7 @@ fun AddEditExpenseScreen(
                     readOnly = true,
                     modifier = Modifier.fillMaxWidth().clickable { showDatePicker = true },
                     enabled = false,
-                    trailingIcon = { Icon(Icons.Default.CalendarMonth, null, tint = Emerald400) },
+                    trailingIcon = { Icon(Icons.Default.CalendarMonth, null, tint = appPrimaryColor()) },
                     colors = OutlinedTextFieldDefaults.colors(
                         disabledTextColor = appTextColor(),
                         disabledBorderColor = appSurfaceColor(),
@@ -272,7 +272,7 @@ fun AddEditExpenseScreen(
                 Switch(
                     checked = isInstallment,
                     onCheckedChange = { isInstallment = it },
-                    colors = SwitchDefaults.colors(checkedThumbColor = Surface950, checkedTrackColor = Emerald500)
+                    colors = SwitchDefaults.colors(checkedThumbColor = appOnAccentColor(), checkedTrackColor = appAccentColor())
                 )
             }
 
@@ -287,8 +287,8 @@ fun AddEditExpenseScreen(
                                 onClick = { installmentMonths = months },
                                 label = { Text("${months}x", fontSize = 12.sp) },
                                 colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = Emerald500,
-                                    selectedLabelColor = Surface950
+                                    selectedContainerColor = appAccentColor(),
+                                    selectedLabelColor = appOnAccentColor()
                                 )
                             )
                         }
@@ -306,7 +306,7 @@ fun AddEditExpenseScreen(
                                 RadioButton(
                                     selected = interestType == type,
                                     onClick = { interestType = type },
-                                    colors = RadioButtonDefaults.colors(selectedColor = Emerald500)
+                                    colors = RadioButtonDefaults.colors(selectedColor = appAccentColor())
                                 )
                                 Spacer(Modifier.width(8.dp))
                                 Column {
@@ -331,13 +331,13 @@ fun AddEditExpenseScreen(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text("Payment Preview", color = Emerald400, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text("Payment Preview", color = appPrimaryColor(), fontWeight = FontWeight.Bold, fontSize = 13.sp)
                             HorizontalDivider(color = appSurfaceColor())
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Text("🎉 0% option:", color = appTextSubColor(), fontSize = 13.sp)
                                 Text(
                                     "₱${String.format("%,.2f", monthlyPreview0)}/mo  →  Total: ₱${String.format("%,.2f", amountDouble)}",
-                                    color = GreenSuccess, fontSize = 13.sp, fontWeight = FontWeight.Medium
+                                    color = appSuccessColor(), fontSize = 13.sp, fontWeight = FontWeight.Medium
                                 )
                             }
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -385,13 +385,13 @@ fun AddEditExpenseScreen(
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Emerald500),
+                colors = ButtonDefaults.buttonColors(containerColor = appAccentColor()),
                 shape = RoundedCornerShape(12.dp),
                 enabled = merchant.isNotBlank() && amountDouble > 0
             ) {
-                Icon(Icons.Default.Check, null, tint = Surface950)
+                Icon(Icons.Default.Check, null, tint = appOnAccentColor())
                 Spacer(Modifier.width(8.dp))
-                Text("Save Expense", color = Surface950, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text("Save Expense", color = appOnAccentColor(), fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
         }
     }

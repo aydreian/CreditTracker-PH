@@ -153,14 +153,14 @@ fun PaymentCalendarView(
                                 .clip(RoundedCornerShape(10.dp))
                                 .background(
                                     when {
-                                        isValidDay && selectedDayOfMonth == dayNumber -> Emerald500.copy(alpha = 0.25f)
+                                        isValidDay && selectedDayOfMonth == dayNumber -> appAccentColor().copy(alpha = 0.25f)
                                         isValidDay && dayNumber == todayDate -> appSurfaceColor()
                                         else -> Color.Transparent
                                     }
                                 )
                                 .then(
                                     if (isValidDay && dayNumber == todayDate) {
-                                        Modifier.border(1.dp, Emerald500, RoundedCornerShape(10.dp))
+                                        Modifier.border(1.dp, appAccentColor(), RoundedCornerShape(10.dp))
                                     } else Modifier
                                 )
                                 .clickable(enabled = isValidDay) {
@@ -179,7 +179,7 @@ fun PaymentCalendarView(
                                 ) {
                                     Text(
                                         text = "$dayNumber",
-                                        color = if (selectedDayOfMonth == dayNumber) Emerald400 else appTextColor(),
+                                        color = if (selectedDayOfMonth == dayNumber) appPrimaryColor() else appTextColor(),
                                         fontSize = 13.sp,
                                         fontWeight = if (dayNumber == todayDate || selectedDayOfMonth == dayNumber) FontWeight.Bold else FontWeight.Normal
                                     )
@@ -188,7 +188,7 @@ fun PaymentCalendarView(
                                             modifier = Modifier
                                                 .size(5.dp)
                                                 .background(
-                                                    if (hasUnpaid) RedAlert else GreenSuccess,
+                                                    if (hasUnpaid) RedAlert else appSuccessColor(),
                                                     CircleShape
                                                 )
                                         )
@@ -259,7 +259,7 @@ fun PaymentCalendarView(
                                         )
                                         Text(
                                             if (due.isPaid) "✓ Paid" else if (daysLeft < 0) "Overdue by ${-daysLeft}d" else "Due in ${daysLeft}d",
-                                            color = if (due.isPaid) GreenSuccess else if (daysLeft < 0) RedAlert else YellowWarn,
+                                            color = if (due.isPaid) appSuccessColor() else if (daysLeft < 0) RedAlert else YellowWarn,
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Medium
                                         )

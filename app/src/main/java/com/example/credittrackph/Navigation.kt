@@ -2,8 +2,10 @@ package com.example.credittrackph
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -11,6 +13,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -36,6 +40,7 @@ import com.example.credittrackph.presentation.screen.*
 import com.example.credittrackph.presentation.viewmodel.CardViewModel
 import com.example.credittrackph.presentation.viewmodel.ProfileViewModel
 import com.example.credittrackph.theme.*
+import kotlinx.coroutines.launch
 
 // ── Bottom Tab Definitions ──
 
@@ -50,6 +55,7 @@ enum class BottomTab(val label: String, val icon: ImageVector) {
 
 sealed class Screen {
     object AddCard : Screen()
+    data class EditCard(val card: CardEntity) : Screen()
     data class CardDetail(val card: CardEntity) : Screen()
     data class AddExpense(val card: CardEntity) : Screen()
 }
@@ -65,7 +71,8 @@ fun MainNavigation(
     onToggleBiometric: (Boolean) -> Unit = {},
     profileViewModel: ProfileViewModel = hiltViewModel()
 ) {
-    var selectedTab by remember { mutableStateOf(BottomTab.HOME) }
+    val pagerState = rememberPagerState(initialPage = 0, pageCount = { 4 })
+    val coroutineScope = rememberCoroutineScope()
     val overlayStack = remember { mutableStateListOf<Screen>() }
     val installmentCalculator = remember { InstallmentCalculator() }
     var showFabMenu by remember { mutableStateOf(false) }
@@ -79,6 +86,13 @@ fun MainNavigation(
     fun popScreen() { if (overlayStack.isNotEmpty()) overlayStack.removeLastOrNull() }
 
     val hasOverlay = overlayStack.isNotEmpty()
+
+    val selectedTab = when (pagerState.currentPage) {
+        0 -> BottomTab.HOME
+        1 -> BottomTab.TRANSACTIONS
+        2 -> BottomTab.STATISTICS
+        else -> BottomTab.WALLET
+    }
 
     if (isMainUserSetupRequired) {
         MainUserSetupDialog(
@@ -97,97 +111,117 @@ fun MainNavigation(
         )
     }
 
-    Scaffold(
-        containerColor = appBackgroundColor(),
-        bottomBar = {
-            if (!hasOverlay && !showFinancier) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(appBackgroundColor())
+    ) {
+        // ── Tab Content with Horizontal Swipe Transition ──
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize()
+        ) { page ->
+            when (page) {
+                0 -> HomeScreen(
+                    onViewAllTransactions = {
+                        coroutineScope.launch { pagerState.animateScrollToPage(1) }
+                    },
+                    onViewWallet = {
+                        coroutineScope.launch { pagerState.animateScrollToPage(3) }
+                    },
+                    onCardClick = { card -> pushScreen(Screen.CardDetail(card)) },
+                    onAiClick = { showFinancier = true },
+                    isDarkTheme = isDarkTheme,
+                    onToggleTheme = onToggleTheme,
+                    isBiometricEnabled = isBiometricEnabled,
+                    onToggleBiometric = onToggleBiometric
+                )
+                1 -> TransactionsScreen()
+                2 -> AnalyticsScreen()
+                3 -> WalletScreen(
+                    onCardClick = { card -> pushScreen(Screen.CardDetail(card)) },
+                    onAddCard = { pushScreen(Screen.AddCard) }
+                )
+            }
+        }
+
+        // ── Pure Floating Bottom Nav (NO background strip padding) ──
+        if (!hasOverlay && !showFinancier) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.BottomCenter
+            ) {
                 BottomNavBar(
                     selectedTab = selectedTab,
-                    onTabSelected = { selectedTab = it },
+                    onTabSelected = { tab ->
+                        coroutineScope.launch { pagerState.animateScrollToPage(tab.ordinal) }
+                    },
                     onFabClick = { showFabMenu = !showFabMenu },
                     isFabExpanded = showFabMenu
                 )
             }
         }
-    ) { padding ->
-        Box(modifier = Modifier.fillMaxSize()) {
-            // ── Tab Content ──
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(if (!hasOverlay && !showFinancier) padding else PaddingValues(0.dp))
-            ) {
-                AnimatedContent(
-                    targetState = selectedTab,
-                    transitionSpec = {
-                        fadeIn(animationSpec = tween(300)) togetherWith fadeOut(animationSpec = tween(300))
-                    },
-                    label = "Tab Transition"
-                ) { targetTab ->
-                    when (targetTab) {
-                        BottomTab.HOME -> HomeScreen(
-                            onViewAllTransactions = { selectedTab = BottomTab.TRANSACTIONS },
-                            onViewWallet = { selectedTab = BottomTab.WALLET },
-                            onCardClick = { card -> pushScreen(Screen.CardDetail(card)) },
-                            onAiClick = { showFinancier = true },
-                            isDarkTheme = isDarkTheme,
-                            onToggleTheme = onToggleTheme,
-                            isBiometricEnabled = isBiometricEnabled,
-                            onToggleBiometric = onToggleBiometric
+
+        // ── Overlay Screens (full-screen, on top of tabs) ──
+        AnimatedContent(
+            targetState = overlayStack.lastOrNull(),
+            transitionSpec = {
+                if (targetState is Screen.CardDetail || initialState is Screen.CardDetail) {
+                    (scaleIn(
+                        initialScale = 0.82f,
+                        animationSpec = tween(320, easing = FastOutSlowInEasing)
+                    ) + fadeIn(animationSpec = tween(250))) togetherWith
+                    (scaleOut(
+                        targetScale = 0.75f,
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessMediumLow
                         )
-                        BottomTab.TRANSACTIONS -> TransactionsScreen()
-                        BottomTab.STATISTICS -> AnalyticsScreen()
-                        BottomTab.WALLET -> WalletScreen(
-                            onCardClick = { card -> pushScreen(Screen.CardDetail(card)) },
-                            onAddCard = { pushScreen(Screen.AddCard) }
-                        )
-                    }
+                    ) + fadeOut(animationSpec = tween(220)))
+                } else if (targetState != null) {
+                    (slideInVertically(initialOffsetY = { it }, animationSpec = tween(300)) + fadeIn()) togetherWith fadeOut()
+                } else {
+                    fadeIn() togetherWith (slideOutVertically(targetOffsetY = { it }, animationSpec = tween(300)) + fadeOut())
+                }
+            },
+            label = "Overlay Transition"
+        ) { screen ->
+            if (screen != null) {
+                when (screen) {
+                    is Screen.AddCard -> AddEditCardScreen(
+                        onBack = { popScreen() },
+                        onSaved = { popScreen() }
+                    )
+                    is Screen.EditCard -> AddEditCardScreen(
+                        cardToEdit = screen.card,
+                        onBack = { popScreen() },
+                        onSaved = { popScreen() }
+                    )
+                    is Screen.CardDetail -> CardDetailScreen(
+                        card = screen.card,
+                        onBack = { popScreen() },
+                        onAddExpense = { pushScreen(Screen.AddExpense(screen.card)) },
+                        onEditCard = { card -> pushScreen(Screen.EditCard(card)) }
+                    )
+                    is Screen.AddExpense -> AddEditExpenseScreen(
+                        card = screen.card,
+                        onBack = { popScreen() },
+                        onSaved = { overlayStack.clear() },
+                        installmentCalculator = installmentCalculator
+                    )
                 }
             }
+        }
 
-            // ── Overlay Screens (full-screen, on top of tabs) ──
-            AnimatedContent(
-                targetState = overlayStack.lastOrNull(),
-                transitionSpec = {
-                    if (targetState != null) {
-                        slideInVertically(initialOffsetY = { it }, animationSpec = tween(300)) + fadeIn() togetherWith fadeOut()
-                    } else {
-                        fadeIn() togetherWith slideOutVertically(targetOffsetY = { it }, animationSpec = tween(300)) + fadeOut()
-                    }
-                },
-                label = "Overlay Transition"
-            ) { screen ->
-                if (screen != null) {
-                    when (screen) {
-                        is Screen.AddCard -> AddEditCardScreen(
-                            onBack = { popScreen() },
-                            onSaved = { popScreen() }
-                        )
-                        is Screen.CardDetail -> CardDetailScreen(
-                            card = screen.card,
-                            onBack = { popScreen() },
-                            onAddExpense = { pushScreen(Screen.AddExpense(screen.card)) }
-                        )
-                        is Screen.AddExpense -> AddEditExpenseScreen(
-                            card = screen.card,
-                            onBack = { popScreen() },
-                            onSaved = { overlayStack.clear() },
-                            installmentCalculator = installmentCalculator
-                        )
-                    }
-                }
-            }
-
-            // ── Financier AI Chat Screen (Full-Screen Animated Overlay) ──
-            AnimatedVisibility(
-                visible = showFinancier,
-                enter = slideInVertically(initialOffsetY = { it }, animationSpec = tween(350, easing = FastOutSlowInEasing)) + fadeIn(),
-                exit = slideOutVertically(targetOffsetY = { it }, animationSpec = tween(300, easing = FastOutSlowInEasing)) + fadeOut()
-            ) {
-                FinancierChatSheet(
-                    onDismiss = { showFinancier = false }
-                )
-            }
+        // ── Financier AI Chat Screen (Full-Screen Animated Overlay) ──
+        AnimatedVisibility(
+            visible = showFinancier,
+            enter = slideInVertically(initialOffsetY = { it }, animationSpec = tween(350, easing = FastOutSlowInEasing)) + fadeIn(),
+            exit = slideOutVertically(targetOffsetY = { it }, animationSpec = tween(300, easing = FastOutSlowInEasing)) + fadeOut()
+        ) {
+            FinancierChatSheet(
+                onDismiss = { showFinancier = false }
+            )
         }
     }
 
@@ -322,10 +356,7 @@ fun BottomNavBar(
                     Box(
                         modifier = Modifier
                             .size(48.dp)
-                            .background(
-                                if (isDark) Emerald500.copy(alpha = 0.22f) else Color(0xFF0284C7).copy(alpha = 0.16f),
-                                CircleShape
-                            )
+                            .background(appIndicatorGlowColor(), CircleShape)
                     )
                 }
 
@@ -384,14 +415,14 @@ fun BottomNavBar(
                 .offset(y = (-16).dp)
                 .size(64.dp)
                 .shadow(12.dp, CircleShape),
-            containerColor = Emerald500,
+            containerColor = appFabContainerColor(),
             shape = CircleShape,
             elevation = FloatingActionButtonDefaults.elevation(0.dp)
         ) {
             Icon(
                 Icons.Default.Add,
                 contentDescription = if (isFabExpanded) "Close Menu" else "Add Action",
-                tint = Surface950,
+                tint = appOnAccentColor(),
                 modifier = Modifier
                     .size(32.dp)
                     .graphicsLayer(rotationZ = fabRotation)
@@ -507,7 +538,7 @@ private fun FabMenuItem(icon: ImageVector, label: String, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Icon(icon, contentDescription = null, tint = Emerald400, modifier = Modifier.size(20.dp))
+            Icon(icon, contentDescription = null, tint = appPrimaryColor(), modifier = Modifier.size(20.dp))
             Text(label, color = appTextColor(), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
         }
     }
@@ -536,10 +567,10 @@ fun MainUserSetupDialog(onNameSubmitted: (String) -> Unit) {
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = appTextColor(),
                         unfocusedTextColor = appTextColor(),
-                        cursorColor = Emerald400,
-                        focusedBorderColor = Emerald400,
+                        cursorColor = appPrimaryColor(),
+                        focusedBorderColor = appPrimaryColor(),
                         unfocusedBorderColor = appTextSubColor().copy(alpha = 0.4f),
-                        focusedLabelColor = Emerald400
+                        focusedLabelColor = appPrimaryColor()
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -548,9 +579,9 @@ fun MainUserSetupDialog(onNameSubmitted: (String) -> Unit) {
         confirmButton = {
             Button(
                 onClick = { if (name.isNotBlank()) onNameSubmitted(name.trim()) },
-                colors = ButtonDefaults.buttonColors(containerColor = Emerald500)
+                colors = ButtonDefaults.buttonColors(containerColor = appAccentColor())
             ) {
-                Text("Let's Go!", color = Surface950, fontWeight = FontWeight.Bold)
+                Text("Let's Go!", color = appOnAccentColor(), fontWeight = FontWeight.Bold)
             }
         },
         containerColor = appCardColor()
@@ -576,10 +607,10 @@ fun AddProfileDialog(onDismiss: () -> Unit, onNameSubmitted: (String) -> Unit) {
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = appTextColor(),
                         unfocusedTextColor = appTextColor(),
-                        cursorColor = Emerald400,
-                        focusedBorderColor = Emerald400,
+                        cursorColor = appPrimaryColor(),
+                        focusedBorderColor = appPrimaryColor(),
                         unfocusedBorderColor = appTextSubColor().copy(alpha = 0.4f),
-                        focusedLabelColor = Emerald400
+                        focusedLabelColor = appPrimaryColor()
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -588,9 +619,9 @@ fun AddProfileDialog(onDismiss: () -> Unit, onNameSubmitted: (String) -> Unit) {
         confirmButton = {
             Button(
                 onClick = { if (name.isNotBlank()) { onNameSubmitted(name.trim()); onDismiss() } },
-                colors = ButtonDefaults.buttonColors(containerColor = Emerald500)
+                colors = ButtonDefaults.buttonColors(containerColor = appAccentColor())
             ) {
-                Text("Save", color = Surface950, fontWeight = FontWeight.Bold)
+                Text("Save", color = appOnAccentColor(), fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
@@ -693,7 +724,7 @@ fun CardPickerSheet(
                                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                 )
                             }
-                            Icon(Icons.Default.ChevronRight, null, tint = Emerald400)
+                            Icon(Icons.Default.ChevronRight, null, tint = appPrimaryColor())
                         }
                     }
                 }

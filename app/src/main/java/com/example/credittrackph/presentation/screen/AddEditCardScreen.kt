@@ -23,6 +23,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.credittrackph.data.db.entity.CardEntity
 import com.example.credittrackph.data.model.Bank
 import com.example.credittrackph.data.model.CardType
 import com.example.credittrackph.presentation.viewmodel.CardViewModel
@@ -31,25 +32,26 @@ import com.example.credittrackph.theme.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEditCardScreen(
+    cardToEdit: CardEntity? = null,
     onBack: () -> Unit,
     onSaved: () -> Unit,
     viewModel: CardViewModel = hiltViewModel()
 ) {
-    var label by remember { mutableStateOf("") }
-    var lastFour by remember { mutableStateOf("") }
-    var selectedCardType by remember { mutableStateOf(CardType.VISA) }
-    var selectedBank by remember { mutableStateOf(Bank.BDO) }
-    var selectedColor by remember { mutableStateOf(CardColorPresets[0]) }
-    var creditLimit by remember { mutableStateOf("") }
-    var billingCutoffDay by remember { mutableStateOf("25") }
-    var dueDay by remember { mutableStateOf("22") }
-    var monthlyBudgetCap by remember { mutableStateOf("") }
+    var label by remember { mutableStateOf(cardToEdit?.label ?: "") }
+    var lastFour by remember { mutableStateOf(cardToEdit?.lastFourDigits ?: "") }
+    var selectedCardType by remember { mutableStateOf(cardToEdit?.cardType ?: CardType.VISA) }
+    var selectedBank by remember { mutableStateOf(cardToEdit?.bank ?: Bank.BDO) }
+    var selectedColor by remember { mutableStateOf(cardToEdit?.let { Color(it.cardColorArgb) } ?: CardColorPresets[0]) }
+    var creditLimit by remember { mutableStateOf(if ((cardToEdit?.creditLimit ?: 0.0) > 0) "%.2f".format(cardToEdit!!.creditLimit) else "") }
+    var billingCutoffDay by remember { mutableStateOf(cardToEdit?.billingCutoffDay?.toString() ?: "25") }
+    var dueDay by remember { mutableStateOf(cardToEdit?.dueDay?.toString() ?: "22") }
+    var monthlyBudgetCap by remember { mutableStateOf(if ((cardToEdit?.monthlyBudgetCap ?: 0.0) > 0) "%.2f".format(cardToEdit!!.monthlyBudgetCap) else "") }
     var bankExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Add New Card", color = appTextColor(), fontWeight = FontWeight.Bold) },
+                title = { Text(if (cardToEdit != null) "Edit Card" else "Add New Card", color = appTextColor(), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = appTextColor())
@@ -97,24 +99,27 @@ fun AddEditCardScreen(
                 }
             }
 
-            // Label
+            // Card Label
             FormSection("Card Label") {
                 OutlinedTextField(
-                    value = label, onValueChange = { label = it },
+                    value = label,
+                    onValueChange = { label = it },
+                    placeholder = { Text("e.g., BDO Gold, BPI Rewards", color = appTextSubColor()) },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("e.g. Daily Card, Travel Card", color = Color.White.copy(0.4f)) },
+                    shape = RoundedCornerShape(12.dp),
                     colors = outlinedTextFieldColors(),
                     singleLine = true
                 )
             }
 
-            // Last 4 digits
-            FormSection("Last 4 Digits of Card") {
+            // Last 4 Digits
+            FormSection("Last 4 Digits") {
                 OutlinedTextField(
                     value = lastFour,
-                    onValueChange = { if (it.length <= 4 && it.all(Char::isDigit)) lastFour = it },
+                    onValueChange = { if (it.length <= 4 && it.all { c -> c.isDigit() }) lastFour = it },
+                    placeholder = { Text("1234", color = appTextSubColor()) },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("1234", color = Color.White.copy(0.4f)) },
+                    shape = RoundedCornerShape(12.dp),
                     colors = outlinedTextFieldColors(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true
@@ -125,25 +130,29 @@ fun AddEditCardScreen(
             FormSection("Bank") {
                 ExposedDropdownMenuBox(
                     expanded = bankExpanded,
-                    onExpandedChange = { bankExpanded = it }
+                    onExpandedChange = { bankExpanded = !bankExpanded }
                 ) {
                     OutlinedTextField(
-                        value = selectedBank.displayName,
+                        value = "${selectedBank.displayName} (${selectedBank.shortCode})",
                         onValueChange = {},
                         readOnly = true,
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(bankExpanded) },
-                        modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = bankExpanded) },
+                        modifier = Modifier.fillMaxWidth().menuAnchor(),
+                        shape = RoundedCornerShape(12.dp),
                         colors = outlinedTextFieldColors()
                     )
                     ExposedDropdownMenu(
                         expanded = bankExpanded,
                         onDismissRequest = { bankExpanded = false },
-                        modifier = Modifier.background(appCardColor())
+                        containerColor = appCardColor()
                     ) {
                         Bank.entries.forEach { bank ->
                             DropdownMenuItem(
-                                text = { Text(bank.displayName, color = appTextColor()) },
-                                onClick = { selectedBank = bank; bankExpanded = false }
+                                text = { Text("${bank.displayName} (${bank.shortCode})", color = appTextColor()) },
+                                onClick = {
+                                    selectedBank = bank
+                                    bankExpanded = false
+                                }
                             )
                         }
                     }
@@ -159,8 +168,8 @@ fun AddEditCardScreen(
                             onClick = { selectedCardType = type },
                             label = { Text(type.displayName, fontSize = 12.sp, fontWeight = FontWeight.Bold) },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = Emerald500,
-                                selectedLabelColor = Surface950
+                                selectedContainerColor = appAccentColor(),
+                                selectedLabelColor = if (LocalIsDarkTheme.current) Surface950 else Color.White
                             )
                         )
                     }
@@ -183,7 +192,7 @@ fun AddEditCardScreen(
                                 .background(color)
                                 .border(
                                     if (selectedColor == color) 2.dp else 0.dp,
-                                    Emerald400, CircleShape
+                                    appPrimaryColor(), CircleShape
                                 )
                                 .clickable { selectedColor = color }
                         )
@@ -196,22 +205,23 @@ fun AddEditCardScreen(
                 OutlinedTextField(
                     value = creditLimit,
                     onValueChange = { creditLimit = it },
+                    placeholder = { Text("0.00", color = appTextSubColor()) },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("50000", color = appTextSubColor().copy(0.4f)) },
+                    shape = RoundedCornerShape(12.dp),
                     colors = outlinedTextFieldColors(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true
                 )
             }
 
-            // Billing cutoff and due day
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            // Statement / Cutoff Day
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 FormSection("Billing Cutoff Day", Modifier.weight(1f)) {
                     OutlinedTextField(
                         value = billingCutoffDay,
-                        onValueChange = { if (it.length <= 2) billingCutoffDay = it },
+                        onValueChange = { if (it.length <= 2 && (it.toIntOrNull() in 1..31 || it.isEmpty())) billingCutoffDay = it },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("25", color = appTextSubColor().copy(0.4f)) },
+                        shape = RoundedCornerShape(12.dp),
                         colors = outlinedTextFieldColors(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true
@@ -220,9 +230,9 @@ fun AddEditCardScreen(
                 FormSection("Payment Due Day", Modifier.weight(1f)) {
                     OutlinedTextField(
                         value = dueDay,
-                        onValueChange = { if (it.length <= 2) dueDay = it },
+                        onValueChange = { if (it.length <= 2 && (it.toIntOrNull() in 1..31 || it.isEmpty())) dueDay = it },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("22", color = appTextSubColor().copy(0.4f)) },
+                        shape = RoundedCornerShape(12.dp),
                         colors = outlinedTextFieldColors(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true
@@ -230,22 +240,21 @@ fun AddEditCardScreen(
                 }
             }
 
-            Spacer(Modifier.height(8.dp))
-
-            // Monthly Budget Cap (optional)
-            FormSection("Monthly Spending Cap (optional)") {
+            // Monthly Budget Cap (Optional)
+            FormSection("Monthly Spending Cap (Optional)") {
                 OutlinedTextField(
                     value = monthlyBudgetCap,
                     onValueChange = { monthlyBudgetCap = it },
+                    placeholder = { Text("e.g. 15000 for ₱15,000 limit", color = appTextSubColor()) },
+                    leadingIcon = { Text("₱", color = appPrimaryColor(), fontWeight = FontWeight.Bold) },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("e.g. 5000 (0 = no cap)", color = appTextSubColor().copy(0.4f)) },
+                    shape = RoundedCornerShape(12.dp),
                     colors = outlinedTextFieldColors(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    leadingIcon = { Text("₱", color = Emerald400, fontWeight = FontWeight.Bold) },
                     singleLine = true
                 )
                 Text(
-                    "You'll get a warning when you reach 80% of this cap 🔔",
+                    "CreditTrack PH will alert you when this card's monthly spend hits 80% or 100% of this cap.",
                     color = appTextSubColor(),
                     fontSize = 11.sp
                 )
@@ -257,28 +266,44 @@ fun AddEditCardScreen(
             Button(
                 onClick = {
                     if (label.isNotBlank() && lastFour.length == 4) {
-                        viewModel.addCard(
-                            label = label,
-                            lastFourDigits = lastFour,
-                            cardType = selectedCardType,
-                            bank = selectedBank,
-                            colorArgb = selectedColor.toArgb().toLong(),
-                            creditLimit = creditLimit.toDoubleOrNull() ?: 0.0,
-                            billingCutoffDay = billingCutoffDay.toIntOrNull() ?: 25,
-                            dueDay = dueDay.toIntOrNull() ?: 22,
-                            monthlyBudgetCap = monthlyBudgetCap.toDoubleOrNull() ?: 0.0
-                        )
+                        if (cardToEdit != null) {
+                            viewModel.updateCard(
+                                cardToEdit.copy(
+                                    label = label,
+                                    lastFourDigits = lastFour,
+                                    cardType = selectedCardType,
+                                    bank = selectedBank,
+                                    cardColorArgb = selectedColor.toArgb().toLong(),
+                                    creditLimit = creditLimit.toDoubleOrNull() ?: 0.0,
+                                    billingCutoffDay = billingCutoffDay.toIntOrNull() ?: 25,
+                                    dueDay = dueDay.toIntOrNull() ?: 22,
+                                    monthlyBudgetCap = monthlyBudgetCap.toDoubleOrNull() ?: 0.0
+                                )
+                            )
+                        } else {
+                            viewModel.addCard(
+                                label = label,
+                                lastFourDigits = lastFour,
+                                cardType = selectedCardType,
+                                bank = selectedBank,
+                                colorArgb = selectedColor.toArgb().toLong(),
+                                creditLimit = creditLimit.toDoubleOrNull() ?: 0.0,
+                                billingCutoffDay = billingCutoffDay.toIntOrNull() ?: 25,
+                                dueDay = dueDay.toIntOrNull() ?: 22,
+                                monthlyBudgetCap = monthlyBudgetCap.toDoubleOrNull() ?: 0.0
+                            )
+                        }
                         onSaved()
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Emerald500),
+                colors = ButtonDefaults.buttonColors(containerColor = appFabContainerColor()),
                 shape = RoundedCornerShape(12.dp),
                 enabled = label.isNotBlank() && lastFour.length == 4
             ) {
-                Icon(Icons.Default.Check, null, tint = Surface950)
+                Icon(Icons.Default.Check, null, tint = if (LocalIsDarkTheme.current) Surface950 else Color.White)
                 Spacer(Modifier.width(8.dp))
-                Text("Save Card", color = Surface950, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text(if (cardToEdit != null) "Update Card" else "Save Card", color = if (LocalIsDarkTheme.current) Surface950 else Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
         }
     }
@@ -296,9 +321,9 @@ fun FormSection(label: String, modifier: Modifier = Modifier, content: @Composab
 fun outlinedTextFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedTextColor = appTextColor(),
     unfocusedTextColor = appTextColor(),
-    focusedBorderColor = Emerald500,
+    focusedBorderColor = appAccentColor(),
     unfocusedBorderColor = appSurfaceColor(),
-    cursorColor = Emerald500,
+    cursorColor = appAccentColor(),
     focusedContainerColor = appCardColor(),
     unfocusedContainerColor = appCardColor()
 )

@@ -70,7 +70,7 @@ fun SummaryCardDialog(
                 .wrapContentHeight()
                 .clip(RoundedCornerShape(24.dp)),
             colors = CardDefaults.cardColors(containerColor = appCardColor()),
-            border = BorderStroke(1.dp, Emerald500.copy(alpha = 0.4f))
+            border = BorderStroke(1.dp, appBorderColor())
         ) {
             Column(
                 modifier = Modifier.padding(20.dp),
@@ -102,11 +102,19 @@ fun SummaryCardDialog(
                         .clip(RoundedCornerShape(20.dp))
                         .background(
                             Brush.linearGradient(
-                                colors = listOf(
-                                    Emerald900,
-                                    Emerald700,
-                                    Surface900
-                                )
+                                colors = if (LocalIsDarkTheme.current) {
+                                    listOf(
+                                        Emerald900,
+                                        Emerald700,
+                                        Surface900
+                                    )
+                                } else {
+                                    listOf(
+                                        Color(0xFF0369A1),
+                                        Color(0xFF0284C7),
+                                        Color(0xFF0C4A6E)
+                                    )
+                                }
                             )
                         )
                         .padding(20.dp)
@@ -119,7 +127,7 @@ fun SummaryCardDialog(
                         ) {
                             Text(
                                 "CREDITTRACK PH 🇵🇭",
-                                color = Emerald400,
+                                color = if (LocalIsDarkTheme.current) Emerald400 else Color(0xFFBAE6FD),
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 1.5.sp
@@ -167,7 +175,7 @@ fun SummaryCardDialog(
                                     Text("Top Category", color = Color.White.copy(alpha = 0.7f), fontSize = 11.sp)
                                     Text(
                                         "${topCategory.first.emoji} ${topCategory.first.displayName}",
-                                        color = Emerald400,
+                                        color = if (LocalIsDarkTheme.current) Emerald400 else Color(0xFFBAE6FD),
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 15.sp
                                     )
@@ -208,14 +216,14 @@ fun SummaryCardDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Emerald500),
+                    colors = ButtonDefaults.buttonColors(containerColor = appAccentColor()),
                     shape = RoundedCornerShape(14.dp)
                 ) {
-                    Icon(Icons.Default.Share, contentDescription = null, tint = Surface950)
+                    Icon(Icons.Default.Share, contentDescription = null, tint = appOnAccentColor())
                     Spacer(Modifier.width(8.dp))
                     Text(
                         "Share to GCash / Friends / Stories 🚀",
-                        color = Surface950,
+                        color = appOnAccentColor(),
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp
                     )

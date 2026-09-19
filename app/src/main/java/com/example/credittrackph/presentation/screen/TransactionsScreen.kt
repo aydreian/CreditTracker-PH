@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -131,7 +132,7 @@ fun TransactionsScreen(
         Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
             Text(
                 "CREDITTRACK PH",
-                color = Emerald400,
+                color = appPrimaryColor(),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 1.5.sp
@@ -164,8 +165,8 @@ fun TransactionsScreen(
                     onClick = { selectedFilter = filter },
                     label = { Text(filter, fontSize = 12.sp) },
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = Emerald500,
-                        selectedLabelColor = Surface950
+                        selectedContainerColor = appAccentColor(),
+                        selectedLabelColor = appOnAccentColor()
                     )
                 )
             }
@@ -196,7 +197,7 @@ fun TransactionsScreen(
                         .clickable { profileDropdownExpanded = true },
                     color = appCardColor(),
                     shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, Surface700.copy(alpha = 0.35f))
+                    border = BorderStroke(1.dp, appBorderColor())
                 ) {
                     Row(
                         modifier = Modifier
@@ -223,7 +224,7 @@ fun TransactionsScreen(
                         Icon(
                             if (profileDropdownExpanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
                             contentDescription = "Select Profile",
-                            tint = Emerald400
+                            tint = appPrimaryColor()
                         )
                     }
                 }
@@ -239,7 +240,7 @@ fun TransactionsScreen(
                         text = {
                             Text(
                                 "Overall transaction",
-                                color = if (selectedProfileFilterId == null) Emerald400 else appTextColor(),
+                                color = if (selectedProfileFilterId == null) appPrimaryColor() else appTextColor(),
                                 fontWeight = if (selectedProfileFilterId == null) FontWeight.Bold else FontWeight.Normal
                             )
                         },
@@ -253,7 +254,7 @@ fun TransactionsScreen(
                             text = {
                                 Text(
                                     "List for ${profile.name}",
-                                    color = if (selectedProfileFilterId == profile.id) Emerald400 else appTextColor(),
+                                    color = if (selectedProfileFilterId == profile.id) appPrimaryColor() else appTextColor(),
                                     fontWeight = if (selectedProfileFilterId == profile.id) FontWeight.Bold else FontWeight.Normal
                                 )
                             },
@@ -292,13 +293,12 @@ fun TransactionsScreen(
                 }
             }
         } else {
-            // ── Grouped Transaction List ──
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 80.dp)
+                contentPadding = PaddingValues(bottom = 96.dp)
             ) {
                 groupedByDate.forEach { (dateLabel, items) ->
-                    item {
+                    item(key = "header_$dateLabel") {
                         Text(
                             dateLabel,
                             color = appTextSubColor(),
@@ -307,21 +307,29 @@ fun TransactionsScreen(
                             modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
                         )
                     }
-                    items(items, key = { it.hashCode() }) { item ->
+                    items(
+                        items = items,
+                        key = { item ->
+                            when (item) {
+                                is TransactionItem.Single -> "single_${item.expense.id}"
+                                is TransactionItem.InstallmentGroup -> "group_${item.merchantName}_${item.purchaseDate}"
+                            }
+                        }
+                    ) { item ->
                         when (item) {
                             is TransactionItem.Single -> {
                                 val swipedBy = allProfiles.find { it.id == item.expense.profileId }?.name ?: "Unknown"
                                 val dismissState = rememberSwipeToDismissBoxState(
+                                    positionalThreshold = { totalDistance -> totalDistance * 0.25f },
                                     confirmValueChange = { dismissValue ->
                                         when (dismissValue) {
                                             SwipeToDismissBoxValue.StartToEnd -> {
-                                                // Swipe right → toggle paid
                                                 if (item.expense.isPaid) {
                                                     expenseViewModel.markAsUnpaid(item.expense.id)
                                                 } else {
                                                     expenseViewModel.markAsPaid(item.expense.id)
                                                 }
-                                                false // don't actually remove item from list
+                                                false
                                             }
                                             SwipeToDismissBoxValue.EndToStart -> {
                                                 expenseViewModel.deleteExpense(item.expense)
@@ -338,7 +346,7 @@ fun TransactionsScreen(
                                         val direction = dismissState.dismissDirection
                                         val bgColor by animateColorAsState(
                                             when {
-                                                direction == SwipeToDismissBoxValue.StartToEnd -> GreenSuccess.copy(alpha = 0.85f)
+                                                direction == SwipeToDismissBoxValue.StartToEnd -> appSuccessColor().copy(alpha = 0.85f)
                                                 direction == SwipeToDismissBoxValue.EndToStart -> RedAlert.copy(alpha = 0.85f)
                                                 else -> Color.Transparent
                                             },
@@ -388,7 +396,74 @@ fun TransactionsScreen(
                             }
                             is TransactionItem.InstallmentGroup -> {
                                 val swipedBy = allProfiles.find { it.id == item.expenses.first().profileId }?.name ?: "Unknown"
-                                Box(modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null)) {
+                                val nextUnpaid = item.expenses.firstOrNull { !it.isPaid }
+                                val groupDismissState = rememberSwipeToDismissBoxState(
+                                    positionalThreshold = { totalDistance -> totalDistance * 0.25f },
+                                    confirmValueChange = { dismissValue ->
+                                        when (dismissValue) {
+                                            SwipeToDismissBoxValue.StartToEnd -> {
+                                                if (nextUnpaid != null) {
+                                                    expenseViewModel.markAsPaid(nextUnpaid.id)
+                                                } else {
+                                                    item.expenses.lastOrNull()?.let { expenseViewModel.markAsUnpaid(it.id) }
+                                                }
+                                                false
+                                            }
+                                            SwipeToDismissBoxValue.EndToStart -> {
+                                                expenseViewModel.deleteInstallmentGroup(item.merchantName, item.purchaseDate)
+                                                true
+                                            }
+                                            else -> false
+                                        }
+                                    }
+                                )
+                                SwipeToDismissBox(
+                                    state = groupDismissState,
+                                    modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null),
+                                    backgroundContent = {
+                                        val direction = groupDismissState.dismissDirection
+                                        val bgColor by animateColorAsState(
+                                            when {
+                                                direction == SwipeToDismissBoxValue.StartToEnd -> appSuccessColor().copy(alpha = 0.85f)
+                                                direction == SwipeToDismissBoxValue.EndToStart -> RedAlert.copy(alpha = 0.85f)
+                                                else -> Color.Transparent
+                                            },
+                                            label = "swipeGroupBg"
+                                        )
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .padding(horizontal = 16.dp, vertical = 3.dp)
+                                                .background(bgColor, RoundedCornerShape(12.dp)),
+                                            contentAlignment = if (direction == SwipeToDismissBoxValue.StartToEnd) Alignment.CenterStart else Alignment.CenterEnd
+                                        ) {
+                                            if (direction == SwipeToDismissBoxValue.StartToEnd) {
+                                                Row(
+                                                    modifier = Modifier.padding(start = 20.dp),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                                ) {
+                                                    Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.size(22.dp))
+                                                    Text(
+                                                        if (nextUnpaid != null) "Pay Month ${nextUnpaid.currentInstallmentMonth}/${nextUnpaid.totalInstallmentMonths}" else "Undo Last Month",
+                                                        color = Color.White,
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = 13.sp
+                                                    )
+                                                }
+                                            } else {
+                                                Row(
+                                                    modifier = Modifier.padding(end = 20.dp),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                                ) {
+                                                    Text("Delete All", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                                    Icon(Icons.Default.Delete, null, tint = Color.White, modifier = Modifier.size(22.dp))
+                                                }
+                                            }
+                                        }
+                                    }
+                                ) {
                                     GroupedInstallmentRow(
                                         group = item,
                                         swipedBy = swipedBy,
@@ -499,13 +574,13 @@ private fun TransactionRow(
                 )
                 Spacer(Modifier.height(2.dp))
                 Surface(
-                    color = if (expense.isPaid) GreenSuccess.copy(alpha = 0.15f) else if (daysLeft < 0) RedAlert.copy(alpha = 0.15f) else appSurfaceColor(),
+                    color = if (expense.isPaid) appSoftSuccessColor() else if (daysLeft < 0) RedAlert.copy(alpha = 0.15f) else appSurfaceColor(),
                     shape = RoundedCornerShape(4.dp),
                     modifier = Modifier.clickable { onTogglePaid() }
                 ) {
                     Text(
                         text = if (expense.isPaid) "✓ Paid (undo)" else if (daysLeft < 0) "Overdue • Pay" else "Due in $daysLeft d • Pay",
-                        color = if (expense.isPaid) GreenSuccess else if (daysLeft < 0) RedAlert else appTextSubColor(),
+                        color = if (expense.isPaid) appSuccessColor() else if (daysLeft < 0) RedAlert else appTextSubColor(),
                         fontSize = 10.sp,
                         fontWeight = if (expense.isPaid) FontWeight.Bold else FontWeight.Normal,
                         modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
@@ -526,7 +601,7 @@ private fun GroupedInstallmentRow(
     onDeleteGroup: () -> Unit = {},
     onToggleExpensePaid: (Int, Boolean) -> Unit = { _, _ -> }
 ) {
-    var expanded by remember { mutableStateOf(false) }
+    var expanded by rememberSaveable { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     val firstExpense = group.expenses.first()
 
@@ -621,12 +696,12 @@ private fun GroupedInstallmentRow(
                         )
                         Box(
                             modifier = Modifier
-                                .background(Emerald500.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
+                                .background(appSoftSuccessColor(), RoundedCornerShape(4.dp))
                                 .padding(horizontal = 4.dp, vertical = 1.dp)
                         ) {
                             Text(
                                 "Installment ($paidCount/${group.expenses.size})",
-                                color = Emerald400,
+                                color = appPrimaryColor(),
                                 fontSize = 9.sp,
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1,
@@ -711,7 +786,7 @@ private fun GroupedInstallmentRow(
 
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Surface(
-                                    color = if (expense.isPaid) GreenSuccess.copy(alpha = 0.15f) else if (daysLeft < 0) RedAlert.copy(alpha = 0.15f) else appCardColor(),
+                                    color = if (expense.isPaid) appSoftSuccessColor() else if (daysLeft < 0) RedAlert.copy(alpha = 0.15f) else appCardColor(),
                                     shape = RoundedCornerShape(4.dp),
                                     modifier = Modifier
                                         .padding(end = 10.dp)
@@ -719,7 +794,7 @@ private fun GroupedInstallmentRow(
                                 ) {
                                     Text(
                                         text = if (expense.isPaid) "✓ Paid" else if (daysLeft < 0) "Overdue" else "Due in $daysLeft d",
-                                        color = if (expense.isPaid) GreenSuccess else if (daysLeft < 0) RedAlert else appTextSubColor(),
+                                        color = if (expense.isPaid) appSuccessColor() else if (daysLeft < 0) RedAlert else appTextSubColor(),
                                         fontSize = 10.sp,
                                         fontWeight = if (expense.isPaid) FontWeight.Bold else FontWeight.Normal,
                                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
@@ -749,13 +824,13 @@ private fun GroupedInstallmentRow(
                         if (!isFullyPaid) {
                             Button(
                                 onClick = onPayAll,
-                                colors = ButtonDefaults.buttonColors(containerColor = Emerald500),
+                                colors = ButtonDefaults.buttonColors(containerColor = appAccentColor()),
                                 shape = RoundedCornerShape(8.dp),
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                             ) {
                                 Text(
                                     "✓ Pay Off All ($remainingCount mos)",
-                                    color = Surface950,
+                                    color = appOnAccentColor(),
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -763,7 +838,7 @@ private fun GroupedInstallmentRow(
                         } else {
                             Text(
                                 "🎉 Fully Paid Early!",
-                                color = GreenSuccess,
+                                color = appSuccessColor(),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold
                             )

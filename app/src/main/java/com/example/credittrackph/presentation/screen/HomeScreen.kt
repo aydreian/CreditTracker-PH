@@ -65,14 +65,14 @@ fun HomeScreen(
             containerColor = appSurfaceColor(),
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Icon(Icons.Default.NotificationsActive, contentDescription = null, tint = Emerald400)
+                    Icon(Icons.Default.NotificationsActive, contentDescription = null, tint = appPrimaryColor())
                     Text("Notifications & Alerts", color = appTextColor(), fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 }
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Surface(
-                        color = Emerald500.copy(alpha = 0.12f),
+                        color = appSoftSuccessColor(),
                         shape = RoundedCornerShape(10.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -83,7 +83,7 @@ fun HomeScreen(
                         ) {
                             Text("📡", fontSize = 20.sp)
                             Column {
-                                Text("SMS Auto-Tracking Active", color = Emerald400, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                Text("SMS Auto-Tracking Active", color = appPrimaryColor(), fontWeight = FontWeight.Bold, fontSize = 12.sp)
                                 Text("Transactions from BDO, BPI, UnionBank, etc. are automatically recognized and recorded.", color = appTextSubColor(), fontSize = 11.sp)
                             }
                         }
@@ -142,7 +142,7 @@ fun HomeScreen(
                             Switch(
                                 checked = isBiometricEnabled,
                                 onCheckedChange = onToggleBiometric,
-                                colors = SwitchDefaults.colors(checkedThumbColor = Surface950, checkedTrackColor = Emerald500)
+                                colors = SwitchDefaults.colors(checkedThumbColor = appOnAccentColor(), checkedTrackColor = appAccentColor())
                             )
                         }
                     }
@@ -150,7 +150,7 @@ fun HomeScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showNotificationsDialog = false }) {
-                    Text("Close", color = Emerald400, fontWeight = FontWeight.Bold)
+                    Text("Close", color = appPrimaryColor(), fontWeight = FontWeight.Bold)
                 }
             }
         )
@@ -173,7 +173,7 @@ fun HomeScreen(
             Column {
                 Text(
                     "CREDITTRACK PH",
-                    color = Emerald400,
+                    color = appPrimaryColor(),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.5.sp
@@ -206,11 +206,11 @@ fun HomeScreen(
                 Box(
                     modifier = Modifier
                         .size(40.dp)
-                        .background(Emerald500.copy(alpha = 0.2f), CircleShape)
+                        .background(appSoftSuccessColor(), CircleShape)
                         .clickable { onAiClick() },
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.AutoAwesome, contentDescription = "AI Assistant", tint = Emerald400, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Default.AutoAwesome, contentDescription = "AI Assistant", tint = appPrimaryColor(), modifier = Modifier.size(20.dp))
                 }
                 
                 // Notification Center Trigger
@@ -221,7 +221,7 @@ fun HomeScreen(
                         .clickable { showNotificationsDialog = true },
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.Notifications, contentDescription = "Notifications", tint = Emerald400, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Default.Notifications, contentDescription = "Notifications", tint = appPrimaryColor(), modifier = Modifier.size(20.dp))
                 }
             }
         }
@@ -248,7 +248,7 @@ fun HomeScreen(
                 label = "Cards",
                 value = "$cardCount",
                 icon = Icons.Default.CreditCard,
-                color = Emerald400,
+                color = appPrimaryColor(),
                 modifier = Modifier.weight(1f),
                 onClick = onViewWallet
             )
@@ -263,7 +263,7 @@ fun HomeScreen(
                 label = "Overdue",
                 value = "$overdueCount",
                 icon = Icons.Default.Warning,
-                color = if (overdueCount > 0) RedAlert else GreenSuccess,
+                color = if (overdueCount > 0) RedAlert else appSuccessColor(),
                 modifier = Modifier.weight(1f)
             )
         }
@@ -275,16 +275,16 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp),
-                colors = CardDefaults.cardColors(containerColor = Emerald500.copy(alpha = 0.12f)),
+                colors = CardDefaults.cardColors(containerColor = appSoftSuccessColor()),
                 shape = RoundedCornerShape(16.dp),
-                border = BorderStroke(1.dp, Emerald500.copy(alpha = 0.4f))
+                border = BorderStroke(1.dp, appBorderColor())
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("📡", fontSize = 18.sp)
                         Text(
                             "New Bank SMS Detected (${pendingSmsExpenses.size})",
-                            color = Emerald400,
+                            color = appPrimaryColor(),
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp
                         )
@@ -310,7 +310,7 @@ fun HomeScreen(
                                             fontSize = 11.sp
                                         )
                                     }
-                                    Text("₱%,.2f".format(pending.amount), color = Emerald400, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                    Text("₱%,.2f".format(pending.amount), color = appPrimaryColor(), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                 }
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -328,12 +328,12 @@ fun HomeScreen(
                                                 expenseViewModel.confirmSmsExpense(pending, matchedCard.id, mainProfile)
                                             }
                                         },
-                                        colors = ButtonDefaults.buttonColors(containerColor = Emerald500),
+                                        colors = ButtonDefaults.buttonColors(containerColor = appAccentColor()),
                                         shape = RoundedCornerShape(8.dp),
                                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                                         enabled = matchedCard != null
                                     ) {
-                                        Text("✓ Add Expense", color = Surface950, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                        Text("✓ Add Expense", color = appOnAccentColor(), fontWeight = FontWeight.Bold, fontSize = 12.sp)
                                     }
                                 }
                             }
@@ -467,7 +467,11 @@ private fun NetWorthCard(
                 .fillMaxWidth()
                 .background(
                     Brush.linearGradient(
-                        colors = listOf(Emerald700, Emerald500, Emerald400)
+                        colors = if (LocalIsDarkTheme.current) {
+                            listOf(Emerald700, Emerald500, Emerald400)
+                        } else {
+                            listOf(Color(0xFF0369A1), Color(0xFF0EA5E9), Color(0xFF38BDF8))
+                        }
                     )
                 )
                 .padding(24.dp)
@@ -632,7 +636,7 @@ private fun HomeSectionHeader(
         if (onTrailingClick != null) {
             Text(
                 trailing,
-                color = Emerald400,
+                color = appPrimaryColor(),
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier.clickable { onTrailingClick() }
@@ -652,7 +656,7 @@ private fun UpcomingDueRow(expense: ExpenseEntity, isVisible: Boolean, swipedBy:
     val urgencyColor = when {
         daysLeft <= 1 -> RedAlert
         daysLeft <= 3 -> YellowWarn
-        else -> Emerald500
+        else -> appAccentColor()
     }
 
     Card(
@@ -804,7 +808,7 @@ private fun RecentTransactionRow(expense: ExpenseEntity, isVisible: Boolean, swi
             Spacer(Modifier.width(8.dp))
             Text(
                 if (isVisible) "₱%,.2f".format(expense.monthlyAmortization) else "••••",
-                color = if (expense.isPaid) GreenSuccess else appTextColor(),
+                color = if (expense.isPaid) appSuccessColor() else appTextColor(),
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
                 softWrap = false
