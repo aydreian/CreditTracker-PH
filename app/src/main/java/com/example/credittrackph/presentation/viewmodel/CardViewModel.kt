@@ -48,10 +48,30 @@ class CardViewModel @Inject constructor(
 
     fun selectCard(card: CardEntity) { _selectedCard.value = card }
 
+    // ── Budget Alert: list of cards where this-month spend ≥ 80% of their cap ──
+    val cardsOverBudget: StateFlow<List<Pair<CardEntity, Double>>> = combine(
+        allCards,
+        expenseRepository.getAllExpenses()
+    ) { cards, allExpenses ->
+        val cal = java.util.Calendar.getInstance()
+        val year = cal.get(java.util.Calendar.YEAR)
+        val month = cal.get(java.util.Calendar.MONTH)
+        cards.filter { it.monthlyBudgetCap > 0.0 }.mapNotNull { card ->
+            val spent = allExpenses.filter { exp ->
+                val c = java.util.Calendar.getInstance().apply { timeInMillis = exp.purchaseDate }
+                exp.cardId == card.id &&
+                    c.get(java.util.Calendar.YEAR) == year &&
+                    c.get(java.util.Calendar.MONTH) == month
+            }.sumOf { it.monthlyAmortization }
+            val pct = spent / card.monthlyBudgetCap
+            if (pct >= 0.8) Pair(card, pct) else null
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     fun addCard(
         label: String, lastFourDigits: String, cardType: CardType,
         bank: Bank, colorArgb: Long, creditLimit: Double,
-        billingCutoffDay: Int, dueDay: Int
+        billingCutoffDay: Int, dueDay: Int, monthlyBudgetCap: Double = 0.0
     ) {
         viewModelScope.launch {
             cardRepository.insertCard(
@@ -63,7 +83,8 @@ class CardViewModel @Inject constructor(
                     cardColorArgb = colorArgb,
                     creditLimit = creditLimit,
                     billingCutoffDay = billingCutoffDay,
-                    dueDay = dueDay
+                    dueDay = dueDay,
+                    monthlyBudgetCap = monthlyBudgetCap
                 )
             )
         }

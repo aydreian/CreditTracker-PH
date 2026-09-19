@@ -1,6 +1,7 @@
 package com.example.credittrackph.presentation.screen
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -307,10 +308,71 @@ fun TransactionsScreen(
                         )
                     }
                     items(items, key = { it.hashCode() }) { item ->
-                        Box(modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null)) {
-                            when (item) {
-                                is TransactionItem.Single -> {
-                                    val swipedBy = allProfiles.find { it.id == item.expense.profileId }?.name ?: "Unknown"
+                        when (item) {
+                            is TransactionItem.Single -> {
+                                val swipedBy = allProfiles.find { it.id == item.expense.profileId }?.name ?: "Unknown"
+                                val dismissState = rememberSwipeToDismissBoxState(
+                                    confirmValueChange = { dismissValue ->
+                                        when (dismissValue) {
+                                            SwipeToDismissBoxValue.StartToEnd -> {
+                                                // Swipe right → toggle paid
+                                                if (item.expense.isPaid) {
+                                                    expenseViewModel.markAsUnpaid(item.expense.id)
+                                                } else {
+                                                    expenseViewModel.markAsPaid(item.expense.id)
+                                                }
+                                                false // don't actually remove item from list
+                                            }
+                                            SwipeToDismissBoxValue.EndToStart -> {
+                                                expenseViewModel.deleteExpense(item.expense)
+                                                true
+                                            }
+                                            else -> false
+                                        }
+                                    }
+                                )
+                                SwipeToDismissBox(
+                                    state = dismissState,
+                                    modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null),
+                                    backgroundContent = {
+                                        val direction = dismissState.dismissDirection
+                                        val bgColor by animateColorAsState(
+                                            when {
+                                                direction == SwipeToDismissBoxValue.StartToEnd -> GreenSuccess.copy(alpha = 0.85f)
+                                                direction == SwipeToDismissBoxValue.EndToStart -> RedAlert.copy(alpha = 0.85f)
+                                                else -> Color.Transparent
+                                            },
+                                            label = "swipeBg"
+                                        )
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .padding(horizontal = 16.dp, vertical = 3.dp)
+                                                .background(bgColor, RoundedCornerShape(12.dp)),
+                                            contentAlignment = if (direction == SwipeToDismissBoxValue.StartToEnd) Alignment.CenterStart else Alignment.CenterEnd
+                                        ) {
+                                            if (direction == SwipeToDismissBoxValue.StartToEnd) {
+                                                Row(
+                                                    modifier = Modifier.padding(start = 20.dp),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                                ) {
+                                                    Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.size(22.dp))
+                                                    Text(if (item.expense.isPaid) "Unmark Paid" else "Mark Paid", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                                }
+                                            } else {
+                                                Row(
+                                                    modifier = Modifier.padding(end = 20.dp),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                                ) {
+                                                    Text("Delete", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                                    Icon(Icons.Default.Delete, null, tint = Color.White, modifier = Modifier.size(22.dp))
+                                                }
+                                            }
+                                        }
+                                    }
+                                ) {
                                     TransactionRow(
                                         expense = item.expense,
                                         swipedBy = swipedBy,
@@ -323,8 +385,10 @@ fun TransactionsScreen(
                                         }
                                     )
                                 }
-                                is TransactionItem.InstallmentGroup -> {
-                                    val swipedBy = allProfiles.find { it.id == item.expenses.first().profileId }?.name ?: "Unknown"
+                            }
+                            is TransactionItem.InstallmentGroup -> {
+                                val swipedBy = allProfiles.find { it.id == item.expenses.first().profileId }?.name ?: "Unknown"
+                                Box(modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null)) {
                                     GroupedInstallmentRow(
                                         group = item,
                                         swipedBy = swipedBy,

@@ -61,6 +61,8 @@ sealed class Screen {
 fun MainNavigation(
     isDarkTheme: Boolean = true,
     onToggleTheme: () -> Unit = {},
+    isBiometricEnabled: Boolean = false,
+    onToggleBiometric: (Boolean) -> Unit = {},
     profileViewModel: ProfileViewModel = hiltViewModel()
 ) {
     var selectedTab by remember { mutableStateOf(BottomTab.HOME) }
@@ -129,7 +131,9 @@ fun MainNavigation(
                             onCardClick = { card -> pushScreen(Screen.CardDetail(card)) },
                             onAiClick = { showFinancier = true },
                             isDarkTheme = isDarkTheme,
-                            onToggleTheme = onToggleTheme
+                            onToggleTheme = onToggleTheme,
+                            isBiometricEnabled = isBiometricEnabled,
+                            onToggleBiometric = onToggleBiometric
                         )
                         BottomTab.TRANSACTIONS -> TransactionsScreen()
                         BottomTab.STATISTICS -> AnalyticsScreen()

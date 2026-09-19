@@ -19,6 +19,7 @@ class NotificationHelper @Inject constructor(
     companion object {
         const val CHANNEL_DUE_DATE = "due_date_reminders"
         const val CHANNEL_NEW_TRANSACTION = "new_transaction"
+        const val CHANNEL_BUDGET_ALERT = "budget_alerts"
     }
 
     private val notificationManager =
@@ -37,8 +38,15 @@ class NotificationHelper @Inject constructor(
             NotificationManager.IMPORTANCE_DEFAULT
         ).apply { description = "New bank transactions detected from SMS" }
 
+        val budgetChannel = NotificationChannel(
+            CHANNEL_BUDGET_ALERT,
+            "Budget & Tipid Alerts",
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply { description = "Alerts when card spending reaches monthly budget caps" }
+
         notificationManager.createNotificationChannel(dueDateChannel)
         notificationManager.createNotificationChannel(transactionChannel)
+        notificationManager.createNotificationChannel(budgetChannel)
     }
 
     fun sendDueDateNotification(cardLabel: String, amount: Double, daysLeft: Int, notifId: Int) {
@@ -76,6 +84,25 @@ class NotificationHelper @Inject constructor(
             .setContentTitle("💳 New Transaction Detected")
             .setContentText("$merchant: ₱${String.format("%,.2f", amount)} - Tap to review")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .build()
+        notificationManager.notify(notifId, notification)
+    }
+
+    fun sendBudgetAlertNotification(cardLabel: String, spent: Double, cap: Double, notifId: Int) {
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val pct = ((spent / cap) * 100).toInt()
+        val notification = NotificationCompat.Builder(context, CHANNEL_BUDGET_ALERT)
+            .setSmallIcon(android.R.drawable.ic_dialog_alert)
+            .setContentTitle("⚠️ Budget Alert: $cardLabel ($pct% reached)")
+            .setContentText("Spent ₱${String.format("%,.2f", spent)} of ₱${String.format("%,.2f", cap)} cap this month. Tipid mode on!")
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
             .build()

@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -21,6 +22,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.credittrackph.data.db.entity.CardEntity
 import com.example.credittrackph.data.db.entity.ExpenseEntity
+import com.example.credittrackph.domain.usecase.ParsedSmsExpense
 import com.example.credittrackph.presentation.viewmodel.CardViewModel
 import com.example.credittrackph.presentation.viewmodel.ExpenseViewModel
 import com.example.credittrackph.theme.*
@@ -35,18 +37,23 @@ fun HomeScreen(
     onAiClick: () -> Unit,
     isDarkTheme: Boolean = true,
     onToggleTheme: () -> Unit = {},
+    isBiometricEnabled: Boolean = false,
+    onToggleBiometric: (Boolean) -> Unit = {},
     cardViewModel: CardViewModel = hiltViewModel(),
     expenseViewModel: ExpenseViewModel = hiltViewModel(),
     profileViewModel: com.example.credittrackph.presentation.viewmodel.ProfileViewModel = hiltViewModel()
 ) {
+    val allCards by cardViewModel.allCards.collectAsState()
     val totalCreditLimit by cardViewModel.totalCreditLimit.collectAsState()
     val totalOutstanding by cardViewModel.totalOutstanding.collectAsState()
     val netAvailable by cardViewModel.netAvailableCredit.collectAsState()
     val cardCount by cardViewModel.cardCount.collectAsState()
+    val cardsOverBudget by cardViewModel.cardsOverBudget.collectAsState()
     val recentTransactions by expenseViewModel.recentTransactions.collectAsState()
     val upcomingDues by expenseViewModel.upcomingDues.collectAsState()
     val thisMonthTotal by expenseViewModel.thisMonthTotal.collectAsState()
     val overdueCount by expenseViewModel.overdueCount.collectAsState()
+    val pendingSmsExpenses by expenseViewModel.pendingSmsExpenses.collectAsState()
     val allProfiles by profileViewModel.allProfiles.collectAsState()
 
     var isBalanceVisible by remember { mutableStateOf(true) }
@@ -112,6 +119,31 @@ fun HomeScreen(
                                 }
                                 Text("₱%,.2f".format(due.monthlyAmortization), color = RedAlert, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                             }
+                        }
+                    }
+
+                    HorizontalDivider(color = appSurfaceColor())
+
+                    // Biometric Lock Toggle
+                    Surface(
+                        color = appCardColor(),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("🔒 Biometric App Lock", color = appTextColor(), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Text("Require fingerprint when opening CreditTrack", color = appTextSubColor(), fontSize = 11.sp)
+                            }
+                            Switch(
+                                checked = isBiometricEnabled,
+                                onCheckedChange = onToggleBiometric,
+                                colors = SwitchDefaults.colors(checkedThumbColor = Surface950, checkedTrackColor = Emerald500)
+                            )
                         }
                     }
                 }
@@ -234,6 +266,123 @@ fun HomeScreen(
                 color = if (overdueCount > 0) RedAlert else GreenSuccess,
                 modifier = Modifier.weight(1f)
             )
+        }
+
+        // ── Pending SMS Detected Transactions ──
+        if (pendingSmsExpenses.isNotEmpty()) {
+            Spacer(Modifier.height(16.dp))
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
+                colors = CardDefaults.cardColors(containerColor = Emerald500.copy(alpha = 0.12f)),
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, Emerald500.copy(alpha = 0.4f))
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("📡", fontSize = 18.sp)
+                        Text(
+                            "New Bank SMS Detected (${pendingSmsExpenses.size})",
+                            color = Emerald400,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
+                    }
+                    pendingSmsExpenses.forEach { pending ->
+                        val matchedCard = allCards.find { it.lastFourDigits == pending.cardLast4 } ?: allCards.firstOrNull()
+                        Surface(
+                            color = appCardColor(),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(pending.merchant, color = appTextColor(), fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                        Text(
+                                            if (matchedCard != null) "${matchedCard.bank.displayName} •••• ${matchedCard.lastFourDigits}" else "Auto-detected transaction",
+                                            color = appTextSubColor(),
+                                            fontSize = 11.sp
+                                        )
+                                    }
+                                    Text("₱%,.2f".format(pending.amount), color = Emerald400, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.End,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    TextButton(onClick = { expenseViewModel.dismissSmsExpense(pending) }) {
+                                        Text("Dismiss", color = appTextSubColor(), fontSize = 12.sp)
+                                    }
+                                    Spacer(Modifier.width(4.dp))
+                                    Button(
+                                        onClick = {
+                                            if (matchedCard != null) {
+                                                val mainProfile = allProfiles.find { it.isMainUser }?.id ?: allProfiles.firstOrNull()?.id
+                                                expenseViewModel.confirmSmsExpense(pending, matchedCard.id, mainProfile)
+                                            }
+                                        },
+                                        colors = ButtonDefaults.buttonColors(containerColor = Emerald500),
+                                        shape = RoundedCornerShape(8.dp),
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                        enabled = matchedCard != null
+                                    ) {
+                                        Text("✓ Add Expense", color = Surface950, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── Budget Alert Banner (Tipid Mode) ──
+        if (cardsOverBudget.isNotEmpty()) {
+            Spacer(Modifier.height(16.dp))
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
+                colors = CardDefaults.cardColors(containerColor = RedAlert.copy(alpha = 0.12f)),
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, RedAlert.copy(alpha = 0.35f))
+            ) {
+                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("⚠️", fontSize = 18.sp)
+                        Text(
+                            "Budget Alert — Tipid Mode!",
+                            color = RedAlert,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
+                    }
+                    cardsOverBudget.forEach { (card, pct) ->
+                        val pctInt = (pct * 100).toInt()
+                        Text(
+                            "• ${card.label} (${card.bank.displayName}): Reached $pctInt% of ₱%,.0f monthly cap!".format(card.monthlyBudgetCap),
+                            color = appTextColor(),
+                            fontSize = 12.sp
+                        )
+                        LinearProgressIndicator(
+                            progress = { pct.toFloat().coerceIn(0f, 1f) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(6.dp)
+                                .clip(RoundedCornerShape(3.dp)),
+                            color = if (pct >= 1.0) RedAlert else YellowWarn,
+                            trackColor = appSurfaceColor()
+                        )
+                    }
+                }
+            }
         }
 
         // ── Upcoming Dues ──
@@ -561,20 +710,34 @@ private fun UpcomingDueRow(expense: ExpenseEntity, isVisible: Boolean, swipedBy:
                 }
             }
             Spacer(Modifier.width(8.dp))
-            Column(horizontalAlignment = Alignment.End) {
+            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     if (isVisible) "₱%,.2f".format(expense.monthlyAmortization) else "••••",
-                    color = urgencyColor,
+                    color = appTextColor(),
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
                     softWrap = false
                 )
-                Text(
-                    if (daysLeft <= 0) "Overdue!" else "$daysLeft day${if (daysLeft != 1) "s" else ""}",
-                    color = urgencyColor,
-                    fontSize = 10.sp,
-                    softWrap = false
-                )
+                val countdownText = when {
+                    daysLeft < 0 -> "Overdue (${-daysLeft}d)"
+                    daysLeft == 0 -> "Due Today ⚡"
+                    daysLeft == 1 -> "Tomorrow ⚡"
+                    daysLeft <= 3 -> "In $daysLeft days ⏳"
+                    else -> "In $daysLeft days"
+                }
+                Surface(
+                    color = urgencyColor.copy(alpha = 0.18f),
+                    shape = RoundedCornerShape(6.dp)
+                ) {
+                    Text(
+                        countdownText,
+                        color = urgencyColor,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        softWrap = false,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
             }
         }
     }

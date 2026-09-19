@@ -16,5 +16,6 @@ data class CardEntity(
     val creditLimit: Double,
     val billingCutoffDay: Int,       // Day of month billing cuts off (1-31)
     val dueDay: Int,                 // Day of month payment is due (1-31)
+    val monthlyBudgetCap: Double = 0.0, // 0.0 = no cap set; > 0 = cap in PHP
     val createdAt: Long = System.currentTimeMillis()
 )

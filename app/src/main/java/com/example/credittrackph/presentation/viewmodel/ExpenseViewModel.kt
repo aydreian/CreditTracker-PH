@@ -9,6 +9,8 @@ import com.example.credittrackph.data.repository.CardRepository
 import com.example.credittrackph.data.repository.ExpenseRepository
 import com.example.credittrackph.domain.calculator.DueDateCalculator
 import com.example.credittrackph.domain.calculator.InstallmentCalculator
+import com.example.credittrackph.domain.usecase.ParsedSmsExpense
+import com.example.credittrackph.domain.usecase.SmsParserUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
@@ -21,8 +23,11 @@ class ExpenseViewModel @Inject constructor(
     private val expenseRepository: ExpenseRepository,
     private val cardRepository: CardRepository,
     private val installmentCalculator: InstallmentCalculator,
-    private val dueDateCalculator: DueDateCalculator
+    private val dueDateCalculator: DueDateCalculator,
+    private val smsParserUseCase: SmsParserUseCase
 ) : ViewModel() {
+
+    val pendingSmsExpenses: StateFlow<List<ParsedSmsExpense>> = smsParserUseCase.pendingExpenses
 
     private val _selectedCardId = MutableStateFlow<Int?>(null)
     val selectedCardId: StateFlow<Int?> = _selectedCardId
@@ -181,6 +186,16 @@ class ExpenseViewModel @Inject constructor(
 
     fun deleteExpense(expense: ExpenseEntity) {
         viewModelScope.launch { expenseRepository.deleteExpense(expense) }
+    }
+
+    fun confirmSmsExpense(parsed: ParsedSmsExpense, cardId: Int, profileId: Int? = null) {
+        viewModelScope.launch {
+            smsParserUseCase.confirmPendingExpense(parsed, cardId, profileId)
+        }
+    }
+
+    fun dismissSmsExpense(parsed: ParsedSmsExpense) {
+        smsParserUseCase.dismissPendingExpense(parsed)
     }
 }
 

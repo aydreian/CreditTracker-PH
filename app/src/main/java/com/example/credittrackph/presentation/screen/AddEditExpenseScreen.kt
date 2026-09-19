@@ -1,6 +1,7 @@
 package com.example.credittrackph.presentation.screen
 
 import androidx.compose.foundation.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -117,6 +118,40 @@ fun AddEditExpenseScreen(
                     Icon(Icons.Default.CreditCard, null, tint = Emerald400)
                     Spacer(Modifier.width(8.dp))
                     Text("${card.label} •••• ${card.lastFourDigits}", color = appTextColor(), fontWeight = FontWeight.Medium)
+                }
+            }
+
+            // ── Quick-Add Common Filipino Merchants ──
+            val quickMerchants = listOf(
+                "Jollibee", "McDonald's", "Grab", "Shopee", "Lazada",
+                "Meralco", "Netflix", "SM Dept Store", "National Bookstore", "Watsons"
+            )
+            FormSection("Quick-Add 🇵🇭") {
+                androidx.compose.foundation.layout.FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    quickMerchants.forEach { qm ->
+                        Surface(
+                            modifier = Modifier.clickable {
+                                merchant = qm
+                                userManuallySelectedCategory = false
+                                val inferred = inferExpenseCategory(qm)
+                                selectedCategory = if (inferred != ExpenseCategory.OTHER) inferred else selectedCategory
+                            },
+                            color = if (merchant == qm) Emerald500 else appSurfaceColor(),
+                            shape = RoundedCornerShape(20.dp),
+                            border = BorderStroke(1.dp, if (merchant == qm) Emerald500 else appSurfaceColor())
+                        ) {
+                            Text(
+                                qm,
+                                fontSize = 12.sp,
+                                color = if (merchant == qm) Surface950 else appTextColor(),
+                                fontWeight = if (merchant == qm) FontWeight.Bold else FontWeight.Normal,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                            )
+                        }
+                    }
                 }
             }
 

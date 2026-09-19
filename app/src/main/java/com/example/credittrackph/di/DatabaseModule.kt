@@ -33,7 +33,7 @@ object DatabaseModule {
             CreditTrackDatabase::class.java,
             "credittrack.db"
         )
-            .addMigrations(CreditTrackDatabase.MIGRATION_1_2)
+            .addMigrations(CreditTrackDatabase.MIGRATION_1_2, CreditTrackDatabase.MIGRATION_2_3)
             .fallbackToDestructiveMigration(false)
             .build()
     }

@@ -5,11 +5,14 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.credittrackph.data.model.ExpenseCategory
+import com.example.credittrackph.presentation.components.PaymentCalendarView
 import com.example.credittrackph.presentation.viewmodel.ExpenseViewModel
 import com.example.credittrackph.theme.*
 import java.util.Calendar
@@ -89,6 +93,16 @@ fun AnalyticsScreen(
         )
     }
 
+    var selectedViewMode by remember { mutableStateOf("Breakdown") }
+    var showSummaryCardDialog by remember { mutableStateOf(false) }
+
+    if (showSummaryCardDialog) {
+        SummaryCardDialog(
+            expenses = filteredExpenses,
+            onDismiss = { showSummaryCardDialog = false }
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -97,48 +111,104 @@ fun AnalyticsScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // ── Header ──
-        Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
-            Text(
-                "CREDITTRACK PH",
-                color = Emerald400,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 1.5.sp
-            )
-            Text(
-                "Statistics",
-                color = appTextColor(),
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold
-            )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(
+                    "CREDITTRACK PH",
+                    color = Emerald400,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.5.sp
+                )
+                Text(
+                    "Statistics",
+                    color = appTextColor(),
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            // Share Card Button
+            Surface(
+                modifier = Modifier.clickable { showSummaryCardDialog = true },
+                color = Emerald500.copy(alpha = 0.15f),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(Icons.Default.Share, contentDescription = "Share", tint = Emerald400, modifier = Modifier.size(16.dp))
+                    Text("Share Card", color = Emerald400, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+            }
         }
 
-        // ── Time Filter ──
+        // ── View Mode Switcher (Breakdown vs Calendar) ──
         Row(
             modifier = Modifier.padding(horizontal = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            listOf("All Time", "This Month").forEach { filter ->
-                FilterChip(
-                    selected = timeFilter == filter,
-                    onClick = { timeFilter = filter },
-                    label = { Text(filter, fontSize = 12.sp) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = Emerald500,
-                        selectedLabelColor = Surface950
-                    )
+            FilterChip(
+                selected = selectedViewMode == "Breakdown",
+                onClick = { selectedViewMode = "Breakdown" },
+                label = { Text("📊 Category Breakdown", fontSize = 12.sp) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = Emerald500,
+                    selectedLabelColor = Surface950
                 )
-            }
+            )
+            FilterChip(
+                selected = selectedViewMode == "Calendar",
+                onClick = { selectedViewMode = "Calendar" },
+                label = { Text("📅 Payment Calendar", fontSize = 12.sp) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = Emerald500,
+                    selectedLabelColor = Surface950
+                )
+            )
         }
 
-        // ── Summary Card ──
-        Card(
-            colors = CardDefaults.cardColors(containerColor = appCardColor()),
-            shape = RoundedCornerShape(16.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp)
-        ) {
+        if (selectedViewMode == "Calendar") {
+            // ── Calendar View ──
+            PaymentCalendarView(
+                expenses = expenses,
+                modifier = Modifier.padding(horizontal = 20.dp)
+            )
+        } else {
+            // ── Time Filter ──
+            Row(
+                modifier = Modifier.padding(horizontal = 20.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf("All Time", "This Month").forEach { filter ->
+                    FilterChip(
+                        selected = timeFilter == filter,
+                        onClick = { timeFilter = filter },
+                        label = { Text(filter, fontSize = 12.sp) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Emerald500,
+                            selectedLabelColor = Surface950
+                        )
+                    )
+                }
+            }
+
+            // ── Summary Card ──
+            Card(
+                colors = CardDefaults.cardColors(containerColor = appCardColor()),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+            ) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Text(
                     text = "Total Tracked Spend",
@@ -291,6 +361,7 @@ fun AnalyticsScreen(
                 }
             }
         }
+    }
 
         Spacer(Modifier.height(80.dp))
     }

@@ -16,7 +16,7 @@ import com.example.credittrackph.data.db.entity.ProfileEntity
 
 @Database(
     entities = [CardEntity::class, ExpenseEntity::class, ProfileEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -30,6 +30,12 @@ abstract class CreditTrackDatabase : RoomDatabase() {
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL("CREATE TABLE IF NOT EXISTS `profiles` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `isMainUser` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL)")
                 database.execSQL("ALTER TABLE `expenses` ADD COLUMN `profileId` INTEGER DEFAULT NULL")
+            }
+        }
+
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE `cards` ADD COLUMN `monthlyBudgetCap` REAL NOT NULL DEFAULT 0.0")
             }
         }
     }

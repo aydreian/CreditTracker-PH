@@ -1,40 +1,57 @@
 package com.example.credittrackph
 
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.ui.Modifier
 import android.Manifest
 import android.os.Build
+import android.os.Bundle
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import com.example.credittrackph.notification.DueDateReminderWorker
-import com.example.credittrackph.theme.CreditTrackPHTheme
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Fingerprint
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.lifecycle.lifecycleScope
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.fragment.app.FragmentActivity
+import com.example.credittrackph.notification.BudgetAlertWorker
+import com.example.credittrackph.notification.DueDateReminderWorker
+import com.example.credittrackph.security.BiometricAuthManager
+import com.example.credittrackph.theme.CreditTrackPHTheme
+import com.example.credittrackph.theme.Emerald400
+import com.example.credittrackph.theme.Emerald500
+import com.example.credittrackph.theme.Surface900
+import com.example.credittrackph.theme.Surface950
 import com.example.credittrackph.util.PreferencesManager
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     @Inject lateinit var preferencesManager: PreferencesManager
+    @Inject lateinit var biometricAuthManager: BiometricAuthManager
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        // Handle permission results if needed
-    }
+    ) { _ -> }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        // Schedule daily due date reminder
+
+        // Schedule periodic background workers
         DueDateReminderWorker.schedule(this)
+        BudgetAlertWorker.schedule(this)
 
         val permissionsToRequest = mutableListOf(
             Manifest.permission.RECEIVE_SMS,
@@ -48,19 +65,121 @@ class MainActivity : ComponentActivity() {
         setContent {
             val appTheme by preferencesManager.appTheme.collectAsState(initial = "DARK")
             val isDark = appTheme != "LIGHT"
+            val isBiometricEnabled by preferencesManager.biometricEnabled.collectAsState(initial = false)
             val scope = rememberCoroutineScope()
+
+            var isUnlocked by remember { mutableStateOf(false) }
+
+            // Auto-prompt biometric if enabled
+            LaunchedEffect(isBiometricEnabled) {
+                if (isBiometricEnabled && !isUnlocked) {
+                    biometricAuthManager.authenticate(
+                        activity = this@MainActivity,
+                        onSuccess = { isUnlocked = true },
+                        onError = { /* Wait for manual click */ }
+                    )
+                }
+            }
 
             CreditTrackPHTheme(darkTheme = isDark) {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    MainNavigation(
-                        isDarkTheme = isDark,
-                        onToggleTheme = {
-                            scope.launch {
-                                preferencesManager.setAppTheme(if (isDark) "LIGHT" else "DARK")
+                    if (isBiometricEnabled && !isUnlocked) {
+                        // Biometric Lock Screen
+                        LockScreen(
+                            onUnlockClick = {
+                                biometricAuthManager.authenticate(
+                                    activity = this@MainActivity,
+                                    onSuccess = { isUnlocked = true },
+                                    onError = { /* Error feedback handled by prompt */ }
+                                )
                             }
-                        }
-                    )
+                        )
+                    } else {
+                        MainNavigation(
+                            isDarkTheme = isDark,
+                            onToggleTheme = {
+                                scope.launch {
+                                    preferencesManager.setAppTheme(if (isDark) "LIGHT" else "DARK")
+                                }
+                            },
+                            isBiometricEnabled = isBiometricEnabled,
+                            onToggleBiometric = { enabled ->
+                                scope.launch {
+                                    preferencesManager.setBiometricEnabled(enabled)
+                                    if (!enabled) isUnlocked = true
+                                }
+                            }
+                        )
+                    }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LockScreen(onUnlockClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Surface950)
+            .padding(24.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(90.dp)
+                    .background(Emerald500.copy(alpha = 0.15f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.Lock,
+                    contentDescription = "Locked",
+                    tint = Emerald400,
+                    modifier = Modifier.size(44.dp)
+                )
+            }
+
+            Spacer(Modifier.height(24.dp))
+
+            Text(
+                "CreditTrack PH",
+                color = Color.White,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(Modifier.height(8.dp))
+
+            Text(
+                "Biometric lock active.\nUnlock to view your credit cards & dues.",
+                color = Color.White.copy(alpha = 0.65f),
+                fontSize = 14.sp,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(Modifier.height(32.dp))
+
+            Button(
+                onClick = onUnlockClick,
+                colors = ButtonDefaults.buttonColors(containerColor = Emerald500),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth(0.7f)
+                    .height(52.dp)
+            ) {
+                Icon(Icons.Default.Fingerprint, contentDescription = null, tint = Surface950)
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    "Unlock with Biometrics",
+                    color = Surface950,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp
+                )
             }
         }
     }

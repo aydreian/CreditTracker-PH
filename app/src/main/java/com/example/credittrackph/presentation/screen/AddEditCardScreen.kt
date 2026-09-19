@@ -43,6 +43,7 @@ fun AddEditCardScreen(
     var creditLimit by remember { mutableStateOf("") }
     var billingCutoffDay by remember { mutableStateOf("25") }
     var dueDay by remember { mutableStateOf("22") }
+    var monthlyBudgetCap by remember { mutableStateOf("") }
     var bankExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -231,6 +232,27 @@ fun AddEditCardScreen(
 
             Spacer(Modifier.height(8.dp))
 
+            // Monthly Budget Cap (optional)
+            FormSection("Monthly Spending Cap (optional)") {
+                OutlinedTextField(
+                    value = monthlyBudgetCap,
+                    onValueChange = { monthlyBudgetCap = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("e.g. 5000 (0 = no cap)", color = appTextSubColor().copy(0.4f)) },
+                    colors = outlinedTextFieldColors(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    leadingIcon = { Text("₱", color = Emerald400, fontWeight = FontWeight.Bold) },
+                    singleLine = true
+                )
+                Text(
+                    "You'll get a warning when you reach 80% of this cap 🔔",
+                    color = appTextSubColor(),
+                    fontSize = 11.sp
+                )
+            }
+
+            Spacer(Modifier.height(8.dp))
+
             // Save button
             Button(
                 onClick = {
@@ -243,7 +265,8 @@ fun AddEditCardScreen(
                             colorArgb = selectedColor.toArgb().toLong(),
                             creditLimit = creditLimit.toDoubleOrNull() ?: 0.0,
                             billingCutoffDay = billingCutoffDay.toIntOrNull() ?: 25,
-                            dueDay = dueDay.toIntOrNull() ?: 22
+                            dueDay = dueDay.toIntOrNull() ?: 22,
+                            monthlyBudgetCap = monthlyBudgetCap.toDoubleOrNull() ?: 0.0
                         )
                         onSaved()
                     }
