@@ -23,6 +23,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.credittrackph.data.db.entity.CardEntity
 import com.example.credittrackph.data.db.entity.ExpenseEntity
 import com.example.credittrackph.domain.usecase.ParsedSmsExpense
+import com.example.credittrackph.presentation.components.PaymentCalendarView
+import com.example.credittrackph.presentation.components.getIcon
 import com.example.credittrackph.presentation.viewmodel.CardViewModel
 import com.example.credittrackph.presentation.viewmodel.ExpenseViewModel
 import com.example.credittrackph.theme.*
@@ -170,7 +172,19 @@ fun HomeScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
+            // Left: AI Assistant
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(appSoftSuccessColor(), CircleShape)
+                    .clickable { onAiClick() },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.AutoAwesome, contentDescription = "AI Assistant", tint = appPrimaryColor(), modifier = Modifier.size(20.dp))
+            }
+            
+            // Center: Welcome / Logo
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     "CREDITTRACK PH",
                     color = appPrimaryColor(),
@@ -181,12 +195,13 @@ fun HomeScreen(
                 Text(
                     "Good ${getTimeGreeting()}",
                     color = appTextColor(),
-                    fontSize = 24.sp,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
+            
+            // Right: Notifications & Theme
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                // Theme Toggle Button
                 Box(
                     modifier = Modifier
                         .size(40.dp)
@@ -202,18 +217,6 @@ fun HomeScreen(
                     )
                 }
 
-                // AI Helper Trigger
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(appSoftSuccessColor(), CircleShape)
-                        .clickable { onAiClick() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Default.AutoAwesome, contentDescription = "AI Assistant", tint = appPrimaryColor(), modifier = Modifier.size(20.dp))
-                }
-                
-                // Notification Center Trigger
                 Box(
                     modifier = Modifier
                         .size(40.dp)
@@ -764,7 +767,12 @@ private fun RecentTransactionRow(expense: ExpenseEntity, isVisible: Boolean, swi
             modifier = Modifier.padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(expense.category.emoji, fontSize = 24.sp)
+            Icon(
+                expense.category.getIcon(),
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+                tint = appTextColor()
+            )
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(

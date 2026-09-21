@@ -27,6 +27,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.credittrackph.data.model.ExpenseCategory
 import com.example.credittrackph.presentation.components.PaymentCalendarView
 import com.example.credittrackph.presentation.viewmodel.ExpenseViewModel
+import com.example.credittrackph.presentation.components.getIcon
 import com.example.credittrackph.theme.*
 import java.util.Calendar
 
@@ -226,7 +227,7 @@ fun AnalyticsScreen(
                 if (topStat != null) {
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "Highest: ${topStat.category.emoji} ${topStat.category.displayName} (₱%,.2f)".format(topStat.totalAmount),
+                        text = "Highest: ${topStat.category.displayName} (₱%,.2f)".format(topStat.totalAmount),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = appPrimaryColor()
@@ -334,8 +335,15 @@ fun AnalyticsScreen(
                                             .background(color)
                                     )
                                     Spacer(modifier = Modifier.width(10.dp))
+                                    Icon(
+                                        stat.category.getIcon(),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp),
+                                        tint = appTextColor()
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
                                     Text(
-                                        text = "${stat.category.emoji} ${stat.category.displayName}",
+                                        text = stat.category.displayName,
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = appTextColor(),
                                         fontWeight = FontWeight.Medium,

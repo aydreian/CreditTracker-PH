@@ -22,6 +22,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.credittrackph.data.db.entity.ExpenseEntity
+import com.example.credittrackph.presentation.components.getIcon
 import com.example.credittrackph.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -247,7 +248,12 @@ fun PaymentCalendarView(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     modifier = Modifier.weight(1f)
                                 ) {
-                                    Text(due.category.emoji, fontSize = 18.sp)
+                                    Icon(
+                                        due.category.getIcon(),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp),
+                                        tint = appTextColor()
+                                    )
                                     Column {
                                         Text(
                                             due.merchantName,

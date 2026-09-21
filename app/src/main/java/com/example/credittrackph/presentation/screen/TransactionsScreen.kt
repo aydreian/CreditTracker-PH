@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.credittrackph.data.db.entity.ExpenseEntity
 import com.example.credittrackph.presentation.viewmodel.ExpenseViewModel
+import com.example.credittrackph.presentation.components.getIcon
 import com.example.credittrackph.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -521,7 +522,12 @@ private fun TransactionRow(
                     .background(appSurfaceColor(), RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Text(expense.category.emoji, fontSize = 20.sp)
+                Icon(
+                    expense.category.getIcon(),
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = appTextColor()
+                )
             }
 
             Spacer(Modifier.width(12.dp))
@@ -668,7 +674,12 @@ private fun GroupedInstallmentRow(
                         .background(appSurfaceColor(), RoundedCornerShape(12.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(firstExpense.category.emoji, fontSize = 20.sp)
+                    Icon(
+                        firstExpense.category.getIcon(),
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = appTextColor()
+                    )
                 }
 
                 Spacer(Modifier.width(12.dp))

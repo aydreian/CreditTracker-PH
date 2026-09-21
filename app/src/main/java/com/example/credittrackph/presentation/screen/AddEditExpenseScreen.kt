@@ -23,6 +23,7 @@ import com.example.credittrackph.data.model.ExpenseCategory
 import com.example.credittrackph.data.model.InterestType
 import com.example.credittrackph.data.model.inferExpenseCategory
 import com.example.credittrackph.domain.calculator.InstallmentCalculator
+import com.example.credittrackph.presentation.components.getIcon
 import com.example.credittrackph.presentation.viewmodel.ExpenseViewModel
 import com.example.credittrackph.theme.*
 import java.text.SimpleDateFormat
@@ -232,7 +233,13 @@ fun AddEditExpenseScreen(
                                 selectedCategory = cat
                                 userManuallySelectedCategory = true
                             },
-                            label = { Text("${cat.emoji} ${cat.displayName}", fontSize = 12.sp) },
+                            label = { 
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(cat.getIcon(), contentDescription = null, modifier = Modifier.size(14.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(cat.displayName, fontSize = 12.sp) 
+                                }
+                            },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = appAccentColor(),
                                 selectedLabelColor = appOnAccentColor()

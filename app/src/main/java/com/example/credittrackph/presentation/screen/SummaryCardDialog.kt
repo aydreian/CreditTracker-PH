@@ -53,7 +53,7 @@ fun SummaryCardDialog(
         appendLine("🔢 Transactions: $count")
         if (topCategory != null) {
             val pct = (topCategory.second / totalSpend) * 100
-            appendLine("🏆 Top Spend: ${topCategory.first.emoji} ${topCategory.first.displayName} (₱%,.2f • %.0f%%)".format(topCategory.second, pct))
+            appendLine("🏆 Top Spend: ${topCategory.first.displayName} (₱%,.2f • %.0f%%)".format(topCategory.second, pct))
         }
         appendLine("━━━━━━━━━━━━━━━━━━━━━")
         appendLine("✨ Track your PH credit cards smartly with CreditTrack PH")
@@ -174,7 +174,7 @@ fun SummaryCardDialog(
                                 Column(horizontalAlignment = Alignment.End) {
                                     Text("Top Category", color = Color.White.copy(alpha = 0.7f), fontSize = 11.sp)
                                     Text(
-                                        "${topCategory.first.emoji} ${topCategory.first.displayName}",
+                                        "${topCategory.first.displayName}",
                                         color = if (LocalIsDarkTheme.current) Emerald400 else Color(0xFFBAE6FD),
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 15.sp

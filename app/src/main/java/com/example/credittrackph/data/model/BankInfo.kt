@@ -32,18 +32,18 @@ enum class CardType(val displayName: String) {
     OTHER("Other")
 }
 
-enum class ExpenseCategory(val displayName: String, val emoji: String) {
-    FOOD("Food & Dining", "🍔"),
-    TRANSPORT("Transport", "🚗"),
-    SHOPPING("Shopping", "🛍️"),
-    UTILITIES("Utilities", "💡"),
-    HEALTH("Health & Medical", "🏥"),
-    ENTERTAINMENT("Entertainment", "🎬"),
-    TRAVEL("Travel", "✈️"),
-    EDUCATION("Education", "📚"),
-    GROCERIES("Groceries", "🛒"),
-    ONLINE("Online Purchase", "💻"),
-    OTHER("Other", "📦")
+enum class ExpenseCategory(val displayName: String) {
+    FOOD("Food & Dining"),
+    TRANSPORT("Transport"),
+    SHOPPING("Shopping"),
+    UTILITIES("Utilities"),
+    HEALTH("Health & Medical"),
+    ENTERTAINMENT("Entertainment"),
+    TRAVEL("Travel"),
+    EDUCATION("Education"),
+    GROCERIES("Groceries"),
+    ONLINE("Online Purchase"),
+    OTHER("Other")
 }
 
 enum class ExpenseSource { MANUAL, SMS_AUTO }

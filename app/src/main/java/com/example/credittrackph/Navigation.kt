@@ -94,6 +94,13 @@ fun MainNavigation(
         else -> BottomTab.WALLET
     }
 
+    var showSplash by remember { mutableStateOf(true) }
+
+    if (showSplash) {
+        BootupSplashScreen(onAnimationFinished = { showSplash = false })
+        return
+    }
+
     if (isMainUserSetupRequired) {
         MainUserSetupDialog(
             onNameSubmitted = { name ->

@@ -22,6 +22,7 @@ import com.example.credittrackph.data.db.entity.ExpenseEntity
 import com.example.credittrackph.data.model.InterestType
 import com.example.credittrackph.presentation.components.CreditCardView
 import com.example.credittrackph.presentation.viewmodel.ExpenseViewModel
+import com.example.credittrackph.presentation.components.getIcon
 import com.example.credittrackph.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -212,7 +213,12 @@ fun ExpenseRow(expense: ExpenseEntity, onMarkPaid: () -> Unit, onDelete: () -> U
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Category emoji
-                Text(expense.category.emoji, fontSize = 24.sp, modifier = Modifier.padding(end = 12.dp))
+                Icon(
+                    expense.category.getIcon(),
+                    contentDescription = null,
+                    modifier = Modifier.padding(end = 12.dp).size(24.dp),
+                    tint = appTextColor()
+                )
 
                 // Main info
                 Column(Modifier.weight(1f)) {

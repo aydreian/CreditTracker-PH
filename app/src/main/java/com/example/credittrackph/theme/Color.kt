@@ -47,13 +47,13 @@ val CardColorPresets = listOf(
 )
 
 @androidx.compose.runtime.Composable
-fun appBackgroundColor(): Color = if (LocalIsDarkTheme.current) Surface950 else Color(0xFFF8FAFC)
+fun appBackgroundColor(): Color = if (LocalIsDarkTheme.current) Color(0xFF1E1B4B) else Color(0xFFF8FAFC)
 
 @androidx.compose.runtime.Composable
-fun appSurfaceColor(): Color = if (LocalIsDarkTheme.current) Surface900 else Color(0xFFFFFFFF)
+fun appSurfaceColor(): Color = if (LocalIsDarkTheme.current) Color(0xFF2E2B5F) else Color(0xFFFFFFFF)
 
 @androidx.compose.runtime.Composable
-fun appCardColor(): Color = if (LocalIsDarkTheme.current) Surface800 else Color(0xFFFFFFFF)
+fun appCardColor(): Color = if (LocalIsDarkTheme.current) Color(0xFF3B3870) else Color(0xFFFFFFFF)
 
 @androidx.compose.runtime.Composable
 fun appTextColor(): Color = if (LocalIsDarkTheme.current) Color.White else Color(0xFF0F172A)
