@@ -60,7 +60,7 @@ class SmsParserUseCase @Inject constructor(
         // Step 1: Fast local regex parsing for Philippine banks (works 100% offline)
         val localParsed = parseSmsLocally(smsBody)
         if (localParsed != null && localParsed.amount > 0) {
-            Log.d(TAG, "Successfully parsed via local PH bank regex: $localParsed")
+            Log.d(TAG, "Successfully parsed via local PH bank regex")
             addPendingExpense(localParsed)
             notificationHelper.sendNewTransactionNotification(
                 merchant = localParsed.merchant,
