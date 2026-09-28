@@ -1,0 +1,4 @@
+## 2024-05-24 - [CRITICAL] Sensitive Data Leak in Logcat
+**Vulnerability:** HttpLoggingInterceptor was configured with `Level.BODY` globally, which meant that in production builds, all network requests were logged to Logcat. This exposed sensitive Groq API keys via the `Authorization` header, as well as the content of the users' SMS messages and financial queries being sent to the AI API.
+**Learning:** Hardcoding `Level.BODY` in logging interceptors is a common source of sensitive data leakage on Android, since Logcat can be read by other tools/apps under certain conditions or dumped during crash reporting.
+**Prevention:** Always wrap logging levels in a debug build check (e.g. `if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY else HttpLoggingInterceptor.Level.NONE`) to ensure no sensitive data is logged in production.

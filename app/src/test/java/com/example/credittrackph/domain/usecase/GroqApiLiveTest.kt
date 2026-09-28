@@ -12,8 +12,8 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 class GroqApiLiveTest {
-
     private val apiKey = "YOUR_GROQ_API_KEY_HERE"
+    @org.junit.Ignore("Requires valid API key")
 
     @Test
     fun testGroqApi_liveSmsParsing() = runBlocking {
