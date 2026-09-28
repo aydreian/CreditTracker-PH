@@ -1,0 +1,10 @@
+## Local configuration template for Credit Tracker PH
+# Copy this file to 'local.properties' in the project root.
+
+# Path to your Android SDK (auto-detected when opening the project in Android Studio)
+# Windows example: sdk.dir=C\:\\Users\\YourUsername\\AppData\\Local\\Android\\Sdk
+# macOS example:   sdk.dir=/Users/YourUsername/Library/Android/sdk
+# Linux example:   sdk.dir=/home/YourUsername/Android/Sdk
+
+# Groq API Key for Financier AI (required for AI chat & automation):
+groq.api.key=YOUR_GROQ_API_KEY_HERE

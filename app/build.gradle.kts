@@ -34,10 +34,15 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file("release.keystore")
-            storePassword = "password"
-            keyAlias = "release_key"
-            keyPassword = "password"
+            val keystoreFile = file("release.keystore")
+            if (keystoreFile.exists()) {
+                storeFile = keystoreFile
+                storePassword = "password"
+                keyAlias = "release_key"
+                keyPassword = "password"
+            } else {
+                initWith(getByName("debug"))
+            }
         }
     }
 
