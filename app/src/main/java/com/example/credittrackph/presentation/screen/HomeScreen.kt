@@ -22,7 +22,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.credittrackph.data.db.entity.CardEntity
 import com.example.credittrackph.data.db.entity.ExpenseEntity
-import com.example.credittrackph.domain.usecase.ParsedSmsExpense
 import com.example.credittrackph.presentation.components.PaymentCalendarView
 import com.example.credittrackph.presentation.components.getIcon
 import com.example.credittrackph.presentation.viewmodel.CardViewModel
