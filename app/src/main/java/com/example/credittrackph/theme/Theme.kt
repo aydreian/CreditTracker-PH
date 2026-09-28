@@ -6,21 +6,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Emerald500,
-    onPrimary = Surface950,
-    primaryContainer = Emerald900,
-    onPrimaryContainer = Emerald300,
-    secondary = Gold400,
-    onSecondary = Surface950,
-    secondaryContainer = Color(0xFF3D2F00),
-    onSecondaryContainer = Gold300,
-    background = Surface950,
+    primary = Color(0xFF4F46E5), // Indigo Iris (Figma Concept 03)
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFF312D6B),
+    onPrimaryContainer = Color(0xFFE0E7FF),
+    secondary = Color(0xFFFF6B6B), // Neon Coral (Figma Concept 03)
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFF4C1D1D),
+    onSecondaryContainer = Color(0xFFFFD1D1),
+    background = Color(0xFF1E1B4B), // Midnight (Figma Concept 03/04)
     onBackground = Color.White,
-    surface = Surface900,
+    surface = Color(0xFF26225B), // Deep Midnight Surface
     onSurface = Color.White,
-    surfaceVariant = Surface800,
+    surfaceVariant = Color(0xFF332E74),
     onSurfaceVariant = Color(0xFFCBD5E1),
-    outline = Surface700,
+    outline = Color(0xFF433E8E),
     error = RedAlert,
     onError = Color.White,
 )
@@ -51,7 +51,9 @@ fun CreditTrackPHTheme(
     content: @Composable () -> Unit
 ) {
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
-    androidx.compose.runtime.CompositionLocalProvider(LocalIsDarkTheme provides darkTheme) {
+    androidx.compose.runtime.CompositionLocalProvider(
+        LocalIsDarkTheme provides darkTheme
+    ) {
         MaterialTheme(
             colorScheme = colorScheme,
             typography = Typography,

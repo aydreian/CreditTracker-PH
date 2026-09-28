@@ -9,12 +9,15 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -31,6 +34,11 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -83,7 +91,12 @@ fun FinancierChatSheet(
             currentlySpeakingText = null
         } else {
             textToSpeech?.stop()
-            val cleanSpeech = text.replace("*", "").replace("🐶", "").replace("₱", "Pesos ").trim()
+            val cleanSpeech = text
+                .replace(Regex("[#*`|_-]"), " ")
+                .replace("🐶", "")
+                .replace("₱", "Pesos ")
+                .replace(Regex("\\s+"), " ")
+                .trim()
             textToSpeech?.speak(cleanSpeech, TextToSpeech.QUEUE_FLUSH, null, "FINANCIER_TTS")
             currentlySpeakingText = text
         }
@@ -559,6 +572,308 @@ fun FinancierChatSheet(
     }
 }
 
+// ── Markdown & Table Parsers for Financier Chat ──
+
+data class TableData(
+    val headers: List<String>,
+    val rows: List<List<String>>
+)
+
+sealed class ChatContentBlock {
+    data class Paragraph(val text: String) : ChatContentBlock()
+    data class Header(val text: String, val level: Int) : ChatContentBlock()
+    data class BulletItem(val text: String) : ChatContentBlock()
+    data class Table(val table: TableData) : ChatContentBlock()
+}
+
+fun parseMessageBlocks(content: String): List<ChatContentBlock> {
+    val blocks = mutableListOf<ChatContentBlock>()
+    val lines = content.lines()
+    var i = 0
+
+    while (i < lines.size) {
+        val rawLine = lines[i]
+        val trimmed = rawLine.trim()
+
+        if (trimmed.isEmpty()) {
+            i++
+            continue
+        }
+
+        // Check for ASCII table borders (+----+----+ or +====+====+)
+        val isAsciiBorder = trimmed.matches(Regex("""^\+[-=+]+(\+[-=+]+)*\+?$"""))
+        // Check for Markdown table line (| ... |)
+        val isTableLine = trimmed.startsWith("|") && trimmed.endsWith("|") && trimmed.count { it == '|' } >= 2
+
+        if (isAsciiBorder || isTableLine) {
+            val tableLines = mutableListOf<String>()
+            while (i < lines.size) {
+                val tLine = lines[i].trim()
+                val isCurrentBorder = tLine.matches(Regex("""^\+[-=+]+(\+[-=+]+)*\+?$"""))
+                val isCurrentTable = tLine.startsWith("|") && tLine.endsWith("|") && tLine.count { it == '|' } >= 2
+                if (isCurrentBorder || isCurrentTable) {
+                    if (!isCurrentBorder) {
+                        tableLines.add(tLine)
+                    }
+                    i++
+                } else {
+                    break
+                }
+            }
+
+            if (tableLines.isNotEmpty()) {
+                val parsedTable = parseTableLines(tableLines)
+                if (parsedTable != null && parsedTable.headers.isNotEmpty()) {
+                    blocks.add(ChatContentBlock.Table(parsedTable))
+                    continue
+                } else {
+                    tableLines.forEach { blocks.add(ChatContentBlock.Paragraph(it)) }
+                    continue
+                }
+            }
+        }
+
+        // Check for Headers
+        if (trimmed.startsWith("### ")) {
+            blocks.add(ChatContentBlock.Header(trimmed.removePrefix("### ").trim(), level = 3))
+            i++
+            continue
+        } else if (trimmed.startsWith("## ")) {
+            blocks.add(ChatContentBlock.Header(trimmed.removePrefix("## ").trim(), level = 2))
+            i++
+            continue
+        } else if (trimmed.startsWith("# ")) {
+            blocks.add(ChatContentBlock.Header(trimmed.removePrefix("# ").trim(), level = 1))
+            i++
+            continue
+        }
+
+        // Check for Bullet Points
+        if (trimmed.startsWith("• ") || trimmed.startsWith("- ") || (trimmed.startsWith("* ") && !trimmed.endsWith("*"))) {
+            val bulletText = trimmed.substring(2).trim()
+            blocks.add(ChatContentBlock.BulletItem(bulletText))
+            i++
+            continue
+        }
+
+        // Regular paragraph (accumulate text until next special block)
+        val paragraphLines = mutableListOf<String>()
+        while (i < lines.size) {
+            val pLine = lines[i].trim()
+            if (pLine.isEmpty() ||
+                pLine.startsWith("#") ||
+                pLine.startsWith("• ") ||
+                pLine.startsWith("- ") ||
+                (pLine.startsWith("* ") && !pLine.endsWith("*")) ||
+                pLine.startsWith("|") ||
+                pLine.matches(Regex("""^\+[-=+]+(\+[-=+]+)*\+?$"""))
+            ) {
+                break
+            }
+            paragraphLines.add(pLine)
+            i++
+        }
+        if (paragraphLines.isNotEmpty()) {
+            blocks.add(ChatContentBlock.Paragraph(paragraphLines.joinToString("\n")))
+        }
+    }
+
+    return blocks
+}
+
+fun parseTableLines(lines: List<String>): TableData? {
+    if (lines.isEmpty()) return null
+    // Filter out separator lines like |---|---| or |:---:|
+    val nonSeparatorLines = lines.filterNot { line ->
+        line.split("|").map { it.trim() }.filter { it.isNotEmpty() }.all { cell -> cell.matches(Regex("^:?-+:?$")) }
+    }
+    if (nonSeparatorLines.isEmpty()) return null
+
+    val headerLine = nonSeparatorLines.first()
+    val headers = headerLine.split("|")
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+
+    val rows = nonSeparatorLines.drop(1).map { rowLine ->
+        rowLine.split("|")
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+    }.filter { it.isNotEmpty() }
+
+    return TableData(headers = headers, rows = rows)
+}
+
+@Composable
+fun parseInlineMarkdown(text: String, baseColor: Color, isHeader: Boolean = false): AnnotatedString {
+    return buildAnnotatedString {
+        val pattern = Regex("""(\*\*([^*]+)\*\*|\*([^*]+)\*|`([^`]+)`|(₱[\d,]+(?:\.\d{2})?))""")
+        var currentIndex = 0
+
+        pattern.findAll(text).forEach { match ->
+            val matchRange = match.range
+            if (matchRange.first > currentIndex) {
+                append(text.substring(currentIndex, matchRange.first))
+            }
+
+            val fullMatch = match.value
+            when {
+                fullMatch.startsWith("**") && fullMatch.endsWith("**") && fullMatch.length >= 4 -> {
+                    val inner = fullMatch.substring(2, fullMatch.length - 2)
+                    pushStyle(SpanStyle(fontWeight = FontWeight.Bold, color = if (isHeader) appPrimaryColor() else baseColor))
+                    append(inner)
+                    pop()
+                }
+                fullMatch.startsWith("*") && fullMatch.endsWith("*") && fullMatch.length >= 2 -> {
+                    val inner = fullMatch.substring(1, fullMatch.length - 1)
+                    pushStyle(SpanStyle(fontStyle = FontStyle.Italic))
+                    append(inner)
+                    pop()
+                }
+                fullMatch.startsWith("`") && fullMatch.endsWith("`") && fullMatch.length >= 2 -> {
+                    val inner = fullMatch.substring(1, fullMatch.length - 1)
+                    pushStyle(
+                        SpanStyle(
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Medium,
+                            background = Color(0x30888888)
+                        )
+                    )
+                    append(" $inner ")
+                    pop()
+                }
+                fullMatch.startsWith("₱") -> {
+                    pushStyle(SpanStyle(fontWeight = FontWeight.Bold, color = if (baseColor == Color.White) Color.White else appPrimaryColor()))
+                    append(fullMatch)
+                    pop()
+                }
+                else -> {
+                    append(fullMatch)
+                }
+            }
+            currentIndex = matchRange.last + 1
+        }
+
+        if (currentIndex < text.length) {
+            append(text.substring(currentIndex))
+        }
+    }
+}
+
+@Composable
+fun FinancierTableCard(table: TableData, textColor: Color) {
+    Surface(
+        color = appCardColor(),
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, appBorderColor()),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp)
+    ) {
+        Box(modifier = Modifier.horizontalScroll(rememberScrollState())) {
+            Column(modifier = Modifier.padding(8.dp)) {
+                // Header Row
+                Row(
+                    modifier = Modifier
+                        .background(appSoftSuccessColor(), RoundedCornerShape(8.dp))
+                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    table.headers.forEach { header ->
+                        Text(
+                            text = header,
+                            color = appPrimaryColor(),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            modifier = Modifier.widthIn(min = 70.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Data Rows
+                table.rows.forEachIndexed { rowIndex, row ->
+                    val rowBg = if (rowIndex % 2 == 0) Color.Transparent else appSurfaceColor().copy(alpha = 0.5f)
+                    Row(
+                        modifier = Modifier
+                            .background(rowBg, RoundedCornerShape(6.dp))
+                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        row.forEachIndexed { _, cell ->
+                            Text(
+                                text = parseInlineMarkdown(cell, textColor),
+                                color = textColor,
+                                fontSize = 12.sp,
+                                modifier = Modifier.widthIn(min = 70.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun FinancierMessageContent(content: String, textColor: Color) {
+    val blocks = remember(content) { parseMessageBlocks(content) }
+
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        blocks.forEach { block ->
+            when (block) {
+                is ChatContentBlock.Paragraph -> {
+                    Text(
+                        text = parseInlineMarkdown(block.text, textColor),
+                        color = textColor,
+                        fontSize = 14.sp,
+                        lineHeight = 20.sp
+                    )
+                }
+                is ChatContentBlock.Header -> {
+                    Text(
+                        text = parseInlineMarkdown(block.text, textColor, isHeader = true),
+                        color = appPrimaryColor(),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = when (block.level) {
+                            1 -> 17.sp
+                            2 -> 15.sp
+                            else -> 14.sp
+                        },
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+                is ChatContentBlock.BulletItem -> {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Text(
+                            "•",
+                            color = appPrimaryColor(),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            text = parseInlineMarkdown(block.text, textColor),
+                            color = textColor,
+                            fontSize = 14.sp,
+                            lineHeight = 20.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+                is ChatContentBlock.Table -> {
+                    FinancierTableCard(table = block.table, textColor = textColor)
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun ChatBubble(
     message: GroqMessage,
@@ -582,7 +897,7 @@ fun ChatBubble(
         if (!isUser) {
             Row(
                 modifier = Modifier
-                    .widthIn(max = 300.dp)
+                    .widthIn(max = 340.dp)
                     .padding(start = 6.dp, bottom = 2.dp, end = 6.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
@@ -610,9 +925,9 @@ fun ChatBubble(
             modifier = Modifier
                 .background(bgColor, shape)
                 .padding(horizontal = 16.dp, vertical = 12.dp)
-                .widthIn(max = 300.dp)
+                .widthIn(min = 60.dp, max = 340.dp)
         ) {
-            Text(message.content, color = textColor, fontSize = 14.sp, lineHeight = 20.sp)
+            FinancierMessageContent(content = message.content, textColor = textColor)
         }
     }
 }

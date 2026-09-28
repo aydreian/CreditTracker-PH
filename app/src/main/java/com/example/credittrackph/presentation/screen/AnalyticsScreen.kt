@@ -279,7 +279,9 @@ fun AnalyticsScreen(
                         Canvas(modifier = Modifier.fillMaxSize()) {
                             var startAngle = -90f
                             categoryTotals.forEachIndexed { index, stat ->
-                                val fullSweep = ((stat.totalAmount / totalSpend) * 360f).toFloat()
+                                val fullSweep = if (totalSpend > 0.0 && totalSpend.isFinite() && stat.totalAmount.isFinite()) {
+                                    ((stat.totalAmount / totalSpend) * 360f).toFloat().coerceIn(0f, 360f)
+                                } else 0f
                                 val sweepAngle = fullSweep * animProgress.value
                                 val color = categoryColors[index % categoryColors.size]
 

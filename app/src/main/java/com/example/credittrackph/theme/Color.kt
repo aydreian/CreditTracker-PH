@@ -50,41 +50,42 @@ val CardColorPresets = listOf(
 fun appBackgroundColor(): Color = if (LocalIsDarkTheme.current) Color(0xFF1E1B4B) else Color(0xFFF8FAFC)
 
 @androidx.compose.runtime.Composable
-fun appSurfaceColor(): Color = if (LocalIsDarkTheme.current) Color(0xFF2E2B5F) else Color(0xFFFFFFFF)
+fun appSurfaceColor(): Color = if (LocalIsDarkTheme.current) Color(0xFF26225B) else Color(0xFFFFFFFF)
 
 @androidx.compose.runtime.Composable
-fun appCardColor(): Color = if (LocalIsDarkTheme.current) Color(0xFF3B3870) else Color(0xFFFFFFFF)
+fun appCardColor(): Color = if (LocalIsDarkTheme.current) Color(0xFF332E74) else Color(0xFFFFFFFF)
 
 @androidx.compose.runtime.Composable
 fun appTextColor(): Color = if (LocalIsDarkTheme.current) Color.White else Color(0xFF0F172A)
 
 @androidx.compose.runtime.Composable
-fun appTextSubColor(): Color = if (LocalIsDarkTheme.current) Color.White.copy(alpha = 0.6f) else Color(0xFF64748B)
+fun appTextSubColor(): Color = if (LocalIsDarkTheme.current) Color.White.copy(alpha = 0.72f) else Color(0xFF64748B)
 
 @androidx.compose.runtime.Composable
-fun appPrimaryColor(): Color = if (LocalIsDarkTheme.current) Emerald400 else Color(0xFF0284C7)
+fun appPrimaryColor(): Color = if (LocalIsDarkTheme.current) Color(0xFF818CF8) else Color(0xFF0284C7)
 
 @androidx.compose.runtime.Composable
-fun appAccentColor(): Color = if (LocalIsDarkTheme.current) Emerald500 else Color(0xFF0EA5E9)
+fun appAccentColor(): Color = if (LocalIsDarkTheme.current) Color(0xFFFF6B6B) else Color(0xFF0EA5E9)
 
 @androidx.compose.runtime.Composable
-fun appAccentDarkColor(): Color = if (LocalIsDarkTheme.current) Emerald700 else Color(0xFF0369A1)
+fun appAccentDarkColor(): Color = if (LocalIsDarkTheme.current) Color(0xFF4F46E5) else Color(0xFF0369A1)
 
 @androidx.compose.runtime.Composable
 fun appSuccessColor(): Color = if (LocalIsDarkTheme.current) GreenSuccess else Color(0xFF0284C7)
 
 @androidx.compose.runtime.Composable
-fun appSoftSuccessColor(): Color = if (LocalIsDarkTheme.current) GreenSuccess.copy(alpha = 0.15f) else Color(0xFF0284C7).copy(alpha = 0.12f)
+fun appSoftSuccessColor(): Color = if (LocalIsDarkTheme.current) Color(0xFF4F46E5).copy(alpha = 0.25f) else Color(0xFF0284C7).copy(alpha = 0.12f)
 
 @androidx.compose.runtime.Composable
-fun appFabContainerColor(): Color = if (LocalIsDarkTheme.current) Emerald500 else Color(0xFF0284C7)
+fun appFabContainerColor(): Color = if (LocalIsDarkTheme.current) Color(0xFFFF6B6B) else Color(0xFF0284C7)
 
 @androidx.compose.runtime.Composable
-fun appBorderColor(): Color = if (LocalIsDarkTheme.current) Surface700.copy(alpha = 0.4f) else Color(0xFFE2E8F0)
+fun appBorderColor(): Color = if (LocalIsDarkTheme.current) Color(0xFF433E8E).copy(alpha = 0.4f) else Color(0xFFE2E8F0)
 
 @androidx.compose.runtime.Composable
-fun appIndicatorGlowColor(): Color = if (LocalIsDarkTheme.current) Emerald500.copy(alpha = 0.22f) else Color(0xFF0284C7).copy(alpha = 0.16f)
+fun appIndicatorGlowColor(): Color = if (LocalIsDarkTheme.current) Color(0xFFFF6B6B).copy(alpha = 0.25f) else Color(0xFF0284C7).copy(alpha = 0.16f)
 
 @androidx.compose.runtime.Composable
-fun appOnAccentColor(): Color = if (LocalIsDarkTheme.current) Surface950 else Color.White
+fun appOnAccentColor(): Color = Color.White
+
 

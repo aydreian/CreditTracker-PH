@@ -119,7 +119,7 @@ fun HomeScreen(
                                     )
                                     Text("Due: ${sdf.format(Date(due.dueDate))}", color = appTextSubColor(), fontSize = 11.sp)
                                 }
-                                Text("₱%,.2f".format(due.monthlyAmortization), color = RedAlert, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Text("₱%,.2f".format(due.monthlyAmortization.takeIf { it.isFinite() } ?: 0.0), color = RedAlert, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                             }
                         }
                     }
@@ -183,20 +183,16 @@ fun HomeScreen(
                 Icon(Icons.Default.AutoAwesome, contentDescription = "AI Assistant", tint = appPrimaryColor(), modifier = Modifier.size(20.dp))
             }
             
-            // Center: Welcome / Logo
+            // Center: Concept 03 Modern Monogram Logo & Brand Lockup
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    "CREDITTRACK PH",
-                    color = appPrimaryColor(),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.5.sp
-                )
+                com.example.credittrackph.presentation.components.ConceptBrandLockup(logoSize = 26.dp, textColor = appTextColor())
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     "Good ${getTimeGreeting()}",
-                    color = appTextColor(),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
+                    fontFamily = SoraFontFamily,
+                    color = appTextSubColor(),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium
                 )
             }
             
@@ -368,14 +364,14 @@ fun HomeScreen(
                         )
                     }
                     cardsOverBudget.forEach { (card, pct) ->
-                        val pctInt = (pct * 100).toInt()
+                        val pctInt = if (pct.isFinite()) (pct * 100).toInt() else 100
                         Text(
-                            "• ${card.label} (${card.bank.displayName}): Reached $pctInt% of ₱%,.0f monthly cap!".format(card.monthlyBudgetCap),
+                            "• ${card.label} (${card.bank.displayName}): Reached $pctInt% of ₱${"%,.0f".format(card.monthlyBudgetCap)} monthly cap!",
                             color = appTextColor(),
                             fontSize = 12.sp
                         )
                         LinearProgressIndicator(
-                            progress = { pct.toFloat().coerceIn(0f, 1f) },
+                            progress = { if (pct.isFinite()) pct.toFloat().coerceIn(0f, 1f) else 1f },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(6.dp)
@@ -719,7 +715,7 @@ private fun UpcomingDueRow(expense: ExpenseEntity, isVisible: Boolean, swipedBy:
             Spacer(Modifier.width(8.dp))
             Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    if (isVisible) "₱%,.2f".format(expense.monthlyAmortization) else "••••",
+                    if (isVisible) "₱%,.2f".format(expense.monthlyAmortization.takeIf { it.isFinite() } ?: 0.0) else "••••",
                     color = appTextColor(),
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
@@ -815,7 +811,7 @@ private fun RecentTransactionRow(expense: ExpenseEntity, isVisible: Boolean, swi
             }
             Spacer(Modifier.width(8.dp))
             Text(
-                if (isVisible) "₱%,.2f".format(expense.monthlyAmortization) else "••••",
+                if (isVisible) "₱%,.2f".format(expense.monthlyAmortization.takeIf { it.isFinite() } ?: 0.0) else "••••",
                 color = if (expense.isPaid) appSuccessColor() else appTextColor(),
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,

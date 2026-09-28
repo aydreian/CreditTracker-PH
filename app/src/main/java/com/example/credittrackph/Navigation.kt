@@ -96,12 +96,7 @@ fun MainNavigation(
 
     var showSplash by remember { mutableStateOf(true) }
 
-    if (showSplash) {
-        BootupSplashScreen(onAnimationFinished = { showSplash = false })
-        return
-    }
-
-    if (isMainUserSetupRequired) {
+    if (!showSplash && isMainUserSetupRequired) {
         MainUserSetupDialog(
             onNameSubmitted = { name ->
                 profileViewModel.setMainUser(name)
@@ -228,6 +223,17 @@ fun MainNavigation(
         ) {
             FinancierChatSheet(
                 onDismiss = { showFinancier = false }
+            )
+        }
+
+        // ── Bootup Splash Screen (Figma Concept 03 & 04 with Seamless Fade-out) ──
+        AnimatedVisibility(
+            visible = showSplash,
+            enter = EnterTransition.None,
+            exit = fadeOut(tween(450, easing = FastOutSlowInEasing))
+        ) {
+            BootupSplashScreen(
+                onAnimationFinished = { showSplash = false }
             )
         }
     }

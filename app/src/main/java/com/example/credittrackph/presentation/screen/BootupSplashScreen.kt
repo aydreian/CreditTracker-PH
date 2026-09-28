@@ -1,143 +1,160 @@
 package com.example.credittrackph.presentation.screen
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.*
 import androidx.compose.animation.core.*
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
-import com.example.credittrackph.theme.appBackgroundColor
-import com.example.credittrackph.theme.appTextColor
+import com.example.credittrackph.presentation.components.ConceptLogo
+import com.example.credittrackph.theme.SoraFontFamily
 
+/**
+ * Bootup Splash Animation Sequence based on Figma Concept 03 & 04 / Wireframe Group 4.
+ *
+ * Sequence:
+ * Frame 1: "Credit" (Centered)
+ * Frame 2: "CreditTracker" (Centered)
+ * Frame 3: "CreditTracker" (Animates left) + "PH" (Neon Coral #FF6B6B fades in)
+ * Frame 4 & 5: Logo appears above, text smoothly pans down
+ * Frame 6: Subtitle "Track your credit. Own your progress." fades in
+ */
 @Composable
-fun BootupSplashScreen(onAnimationFinished: () -> Unit) {
-    // Animation states mapping to the 6 frames
+fun BootupSplashScreen(
+    modifier: Modifier = Modifier,
+    onAnimationFinished: () -> Unit
+) {
     var step by remember { mutableIntStateOf(1) }
 
-    // Text offsets and alphas
-    val creditOffset by animateDpAsState(
-        targetValue = if (step >= 3) (-24).dp else 0.dp,
-        animationSpec = tween(600, easing = FastOutSlowInEasing),
-        label = "creditOffset"
-    )
-    val containerOffsetY by animateDpAsState(
-        targetValue = if (step >= 4) 40.dp else 0.dp,
-        animationSpec = tween(800, easing = FastOutSlowInEasing),
-        label = "containerOffsetY"
-    )
-
     LaunchedEffect(Unit) {
-        delay(300) // Frame 1: "Credit"
-        step = 2
-        delay(600) // Frame 2: "CreditTracker"
-        step = 3
-        delay(600) // Frame 3: "CreditTracker" moves left, "PH" fades in
-        step = 4
-        delay(600) // Frame 4: Panning down
-        step = 5
-        delay(800) // Frame 5: Logo appears
-        step = 6
-        delay(1200) // Frame 6: Subtitle fades in
-        delay(1500) // Hold for reading
+        delay(400) // Frame 1: "Credit" centered
+        step = 2   // Frame 2: "Tracker" expands from center
+        delay(600)
+        step = 3   // Frame 3: "PH" expands in Neon Coral, text shifts left
+        delay(650)
+        step = 4   // Frame 4 & 5: Logo appears and text pans down
+        delay(700)
+        step = 5   // Frame 5: Logo elements full reveal
+        delay(500)
+        step = 6   // Frame 6: Subtitle fades in
+        delay(1400) // Hold state for user reading
         onAnimationFinished()
     }
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF1E1B4B)), // Forced deep indigo for splash
+            .background(Color(0xFF1E1B4B)), // Midnight Indigo from Figma
         contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.offset(y = containerOffsetY)
-        ) {
-            // Logo placeholder / Concept 3 Logo
-            AnimatedVisibility(
-                visible = step >= 5,
-                enter = fadeIn(tween(800)) + scaleIn(initialScale = 0.8f)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(64.dp)
-                        .background(Color.White.copy(alpha = 0.1f), shape = androidx.compose.foundation.shape.CircleShape)
-                        .padding(8.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "CT",
-                        color = Color.White,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .animateContentSize(
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessLow
                     )
+                )
+        ) {
+            // Frame 4 & 5: Monogram Logo from Concept 03
+            AnimatedVisibility(
+                visible = step >= 4,
+                enter = fadeIn(tween(400)) + scaleIn(
+                    initialScale = 0.5f,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessMediumLow
+                    )
+                )
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    ConceptLogo(size = 56.dp)
+                    Spacer(modifier = Modifier.height(20.dp))
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Main Typographic Lockup
+            // Typography Lockup: Credit + Tracker + PH (Perfect mathematical alignment)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxWidth()
+                horizontalArrangement = Arrangement.Center
             ) {
-                Box(contentAlignment = Alignment.CenterEnd, modifier = Modifier.width(180.dp).offset(x = creditOffset)) {
-                    Row {
-                        Text(
-                            text = "Credit",
-                            color = Color.White,
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = (-1).sp
-                        )
-                        AnimatedVisibility(visible = step >= 2) {
-                            Text(
-                                text = "Tracker",
-                                color = Color.White,
-                                fontSize = 32.sp,
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = (-1).sp
-                            )
-                        }
-                    }
-                }
-                AnimatedVisibility(visible = step >= 3, enter = fadeIn(tween(600))) {
-                    Text(
-                        text = "PH",
-                        color = Color(0xFF34D399), // Emerald accent
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = (-1).sp,
-                        modifier = Modifier.padding(start = 8.dp)
+                Text(
+                    text = "Credit",
+                    fontFamily = SoraFontFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 32.sp,
+                    color = Color.White,
+                    letterSpacing = (-0.5).sp
+                )
+
+                AnimatedVisibility(
+                    visible = step >= 2,
+                    enter = fadeIn(tween(350)) + expandHorizontally(
+                        expandFrom = Alignment.Start,
+                        animationSpec = tween(400, easing = FastOutSlowInEasing)
                     )
+                ) {
+                    Text(
+                        text = "Tracker",
+                        fontFamily = SoraFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 32.sp,
+                        color = Color.White,
+                        letterSpacing = (-0.5).sp
+                    )
+                }
+
+                AnimatedVisibility(
+                    visible = step >= 3,
+                    enter = fadeIn(tween(350)) + expandHorizontally(
+                        expandFrom = Alignment.Start,
+                        animationSpec = tween(400, easing = FastOutSlowInEasing)
+                    )
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "PH",
+                            fontFamily = SoraFontFamily,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 30.sp,
+                            color = Color(0xFFFF6B6B), // Neon Coral from Figma Concept 03
+                            letterSpacing = (-0.5).sp
+                        )
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Subtitle
+            // Frame 6: Textholder / Subtitle from Figma Wireframe
             AnimatedVisibility(
                 visible = step >= 6,
-                enter = fadeIn(tween(1000))
-            ) {
-                Text(
-                    text = "Clear direction for your financial future.",
-                    color = Color.White.copy(alpha = 0.7f),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
+                enter = fadeIn(tween(600)) + slideInVertically(
+                    initialOffsetY = { 20 },
+                    animationSpec = tween(600, easing = FastOutSlowInEasing)
                 )
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Track your credit. Own your progress.",
+                        fontFamily = SoraFontFamily,
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 14.sp,
+                        color = Color.White.copy(alpha = 0.72f),
+                        letterSpacing = 0.5.sp
+                    )
+                }
             }
         }
     }

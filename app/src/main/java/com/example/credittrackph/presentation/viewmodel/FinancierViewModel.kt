@@ -8,11 +8,13 @@ import com.example.credittrackph.data.db.dao.ExpenseDao
 import com.example.credittrackph.data.db.dao.ProfileDao
 import com.example.credittrackph.data.db.entity.ExpenseEntity
 import com.example.credittrackph.data.model.ExpenseCategory
+import com.example.credittrackph.data.model.ExpenseSource
 import com.example.credittrackph.data.model.inferExpenseCategory
 import com.example.credittrackph.data.network.GroqApiService
 import com.example.credittrackph.data.network.GroqMessage
 import com.example.credittrackph.data.network.GroqRequest
 import com.example.credittrackph.data.network.GroqResponse
+import com.example.credittrackph.domain.calculator.DueDateCalculator
 import com.example.credittrackph.domain.calculator.InstallmentCalculator
 import com.example.credittrackph.util.PreferencesManager
 import com.google.gson.Gson
@@ -41,6 +43,7 @@ class FinancierViewModel @Inject constructor(
     private val cardDao: CardDao,
     private val profileDao: ProfileDao,
     private val installmentCalculator: InstallmentCalculator,
+    private val dueDateCalculator: DueDateCalculator,
     private val preferencesManager: PreferencesManager
 ) : ViewModel() {
 
@@ -62,19 +65,26 @@ class FinancierViewModel @Inject constructor(
                 "You are 'paldo' (slang for very rich), use bulldog puns ('Woof!', 'Ruff!'), and protect the user from credit card debt. " +
                 "CREATOR WATERMARK: You were created with pride by aydreian (github.com/aydreian) for Filipino credit card holders. " +
                 "If anyone asks who made or built you, proudly mention your creator aydreian!\n\n" +
+                "FORMATTING RULES FOR MOBILE SCREENS:\n" +
+                "- NEVER output raw ASCII tables (with '+---+---+' or wide borders) or wide multi-column markdown tables. They break on narrow mobile phone screens.\n" +
+                "- Instead of wide tables, ALWAYS format amortization schedules, payment breakdowns, and summaries using clean, readable bullet points with bold text and emojis! Example:\n" +
+                "  • **Month 1**: ₱1,000 (Principal: ₱800 | Interest: ₱200)\n" +
+                "  • **Month 2**: ₱1,000 (Principal: ₱820 | Interest: ₱180)\n" +
+                "- Use bolding `**like this**` for emphasis, merchant names, amounts, and dates.\n\n" +
                 "CATEGORIES: FOOD, TRANSPORT, SHOPPING, UTILITIES, HEALTH, ENTERTAINMENT, TRAVEL, EDUCATION, GROCERIES, ONLINE, OTHER.\n" +
-                "When creating installments or tracking spending, always infer the most accurate category from the merchant (e.g. Jollibee -> FOOD, Shell -> TRANSPORT, Uniqlo -> SHOPPING, Meralco -> UTILITIES, Puregold -> GROCERIES).\n\n" +
-                "ACTIONS: If the user asks to perform an action, append an exact JSON block wrapped in <ACTION>...</ACTION>.\n" +
+                "When tracking spending, always infer the most accurate category from the merchant (e.g. Jollibee -> FOOD, Shell -> TRANSPORT, Uniqlo -> SHOPPING, Meralco -> UTILITIES, Puregold -> GROCERIES).\n\n" +
+                "ACTIONS: If the user asks to perform an action or automate tracking, append an exact JSON block wrapped in <ACTION>...</ACTION>.\n" +
                 "Supported actions:\n" +
-                "1. Mark an expense paid: <ACTION>{\"type\": \"MARK_PAID\", \"expenseId\": 123}</ACTION>\n" +
-                "2. Mark an expense unpaid / undo accidental pay: <ACTION>{\"type\": \"UNMARK_PAID\", \"expenseId\": 123}</ACTION>\n" +
-                "3. Pay off whole installment group early: <ACTION>{\"type\": \"MARK_INSTALLMENT_GROUP_PAID\", \"merchantName\": \"Merchant\", \"purchaseDate\": 123456789}</ACTION>\n" +
-                "4. Delete whole installment group: <ACTION>{\"type\": \"DELETE_INSTALLMENT_GROUP\", \"merchantName\": \"Merchant\", \"purchaseDate\": 123456789}</ACTION>\n" +
-                "5. Undo last action: <ACTION>{\"type\": \"UNDO_LAST\"}</ACTION>\n" +
-                "6. Create installment: <ACTION>{\"type\": \"CREATE_INSTALLMENT\", \"cardId\": 1, \"profileId\": 1, \"category\": \"SHOPPING\", \"merchantName\": \"Merchant\", \"amount\": 1000.0, \"months\": 12, \"interestRate\": 0.0}</ACTION>\n\n" +
-                "RULES FOR profileId:\n" +
-                "- If the user specifies who swiped (e.g., 'for John', 'Mom bought', etc.), match with the Profiles list and set 'profileId' to that person's ID.\n" +
-                "- If no person is specified, set 'profileId' to the Main User's profile ID.\n" +
+                "1. Add a regular single expense: <ACTION>{\"type\": \"CREATE_EXPENSE\", \"cardId\": 1, \"profileId\": 1, \"category\": \"FOOD\", \"merchantName\": \"Jollibee\", \"amount\": 250.0}</ACTION>\n" +
+                "2. Create an installment: <ACTION>{\"type\": \"CREATE_INSTALLMENT\", \"cardId\": 1, \"profileId\": 1, \"category\": \"SHOPPING\", \"merchantName\": \"Merchant\", \"amount\": 1000.0, \"months\": 12, \"interestRate\": 0.0}</ACTION>\n" +
+                "3. Mark an expense paid: <ACTION>{\"type\": \"MARK_PAID\", \"expenseId\": 123}</ACTION>\n" +
+                "4. Mark an expense unpaid / undo accidental pay: <ACTION>{\"type\": \"UNMARK_PAID\", \"expenseId\": 123}</ACTION>\n" +
+                "5. Pay off whole installment group early: <ACTION>{\"type\": \"MARK_INSTALLMENT_GROUP_PAID\", \"merchantName\": \"Merchant\", \"purchaseDate\": 123456789}</ACTION>\n" +
+                "6. Delete whole installment group: <ACTION>{\"type\": \"DELETE_INSTALLMENT_GROUP\", \"merchantName\": \"Merchant\", \"purchaseDate\": 123456789}</ACTION>\n" +
+                "7. Undo last action: <ACTION>{\"type\": \"UNDO_LAST\"}</ACTION>\n\n" +
+                "RULES FOR cardId and profileId:\n" +
+                "- Match the user's card from the Cards list. If user does not specify a card, use the first available card ID.\n" +
+                "- If the user specifies who swiped (e.g., 'for John', 'Mom bought', etc.), match with the Profiles list and set 'profileId' to that person's ID. Otherwise, use the Default Main User Profile ID.\n" +
                 "Do not use markdown inside <ACTION>. Exact JSON only."
     )
 
@@ -267,6 +277,118 @@ class FinancierViewModel @Inject constructor(
             val type = action.get("type")?.asString
 
             when (type) {
+                "CREATE_EXPENSE" -> {
+                    val allCards = cardDao.getAllCardsSync()
+                    if (allCards.isEmpty()) return
+                    val requestedCardId = action.get("cardId")?.asInt
+                    val card = allCards.find { it.id == requestedCardId } ?: allCards.first()
+                    val merchant = action.get("merchantName")?.asString?.ifBlank { "Expense" } ?: "Expense"
+                    val amount = action.get("amount")?.asDouble ?: 0.0
+                    if (amount <= 0.0 || !amount.isFinite()) return
+
+                    val categoryStr = action.get("category")?.asString?.uppercase()
+                    val category = try {
+                        if (categoryStr != null) ExpenseCategory.valueOf(categoryStr) else inferExpenseCategory(merchant)
+                    } catch (e: Exception) {
+                        inferExpenseCategory(merchant)
+                    }
+
+                    val parsedProfileId = action.get("profileId")?.takeIf { !it.isJsonNull }?.asInt
+                    val mainProfile = profileDao.getMainUserSync()
+                    val targetProfileId = parsedProfileId ?: mainProfile?.id
+
+                    val purchaseDate = System.currentTimeMillis()
+                    val dueDate = dueDateCalculator.calculateDueDate(purchaseDate, card.billingCutoffDay, card.dueDay)
+
+                    val entity = ExpenseEntity(
+                        cardId = card.id,
+                        profileId = targetProfileId,
+                        merchantName = merchant,
+                        category = category,
+                        amount = amount,
+                        purchaseDate = purchaseDate,
+                        monthlyAmortization = amount,
+                        dueDate = dueDate,
+                        source = ExpenseSource.MANUAL
+                    )
+                    val insertedId = expenseDao.insertExpense(entity)
+                    lastAction = JsonObject().apply {
+                        addProperty("type", "CREATE_EXPENSE")
+                        addProperty("expenseId", insertedId.toInt())
+                    }
+                }
+                "CREATE_INSTALLMENT" -> {
+                    val allCards = cardDao.getAllCardsSync()
+                    if (allCards.isEmpty()) return
+                    val requestedCardId = action.get("cardId")?.asInt
+                    val card = allCards.find { it.id == requestedCardId } ?: allCards.first()
+
+                    val merchant = action.get("merchantName")?.asString?.ifBlank { "Installment" } ?: "Installment"
+                    val amount = action.get("amount")?.asDouble ?: 0.0
+                    val months = (action.get("months")?.asInt ?: 1).coerceAtLeast(1)
+                    val rate = (action.get("interestRate")?.asDouble ?: 0.0).coerceAtLeast(0.0)
+
+                    if (amount <= 0.0 || !amount.isFinite()) return
+
+                    val categoryStr = action.get("category")?.asString?.uppercase()
+                    val category = try {
+                        if (categoryStr != null) ExpenseCategory.valueOf(categoryStr) else inferExpenseCategory(merchant)
+                    } catch (e: Exception) {
+                        inferExpenseCategory(merchant)
+                    }
+
+                    val parsedProfileId = action.get("profileId")?.takeIf { !it.isJsonNull }?.asInt
+                    val mainProfile = profileDao.getMainUserSync()
+                    val targetProfileId = parsedProfileId ?: mainProfile?.id
+
+                    val purchaseDate = System.currentTimeMillis()
+                    val result = if (rate > 0.0) {
+                        installmentCalculator.calculateWithInterest(amount, months, card.bank)
+                    } else {
+                        installmentCalculator.calculateZeroInterest(amount, months)
+                    }
+
+                    val safeMonthly = if (result.monthlyAmortization.isFinite() && result.monthlyAmortization > 0.0) {
+                        result.monthlyAmortization
+                    } else {
+                        amount / months
+                    }
+
+                    val safeInterest = if (result.totalInterest.isFinite()) result.totalInterest else 0.0
+
+                    val expenses = result.schedule.map { payment ->
+                        val dueDate = dueDateCalculator.calculateInstallmentDueDate(
+                            purchaseDate,
+                            card.billingCutoffDay,
+                            card.dueDay,
+                            payment.month
+                        )
+
+                        ExpenseEntity(
+                            cardId = card.id,
+                            profileId = targetProfileId,
+                            merchantName = merchant,
+                            category = category,
+                            amount = amount,
+                            purchaseDate = purchaseDate,
+                            isInstallment = true,
+                            totalInstallmentMonths = months,
+                            currentInstallmentMonth = payment.month,
+                            interestType = result.interestType,
+                            monthlyAmortization = if (payment.amount.isFinite()) payment.amount else safeMonthly,
+                            totalInterest = safeInterest,
+                            interestRateMonthly = result.interestRateMonthly,
+                            dueDate = dueDate,
+                            source = ExpenseSource.MANUAL
+                        )
+                    }
+                    expenseDao.insertExpenses(expenses)
+                    lastAction = JsonObject().apply {
+                        addProperty("type", "CREATE_INSTALLMENT")
+                        addProperty("merchantName", merchant)
+                        addProperty("purchaseDate", purchaseDate)
+                    }
+                }
                 "MARK_PAID" -> {
                     val expenseId = action.get("expenseId")?.asInt
                     if (expenseId != null) {
@@ -319,61 +441,23 @@ class FinancierViewModel @Inject constructor(
                                 val id = prev.get("expenseId")?.asInt
                                 if (id != null) expenseDao.markAsPaid(id)
                             }
+                            "CREATE_EXPENSE" -> {
+                                val id = prev.get("expenseId")?.asInt
+                                if (id != null) {
+                                    val exp = expenseDao.getExpenseById(id)
+                                    if (exp != null) expenseDao.deleteExpense(exp)
+                                }
+                            }
+                            "CREATE_INSTALLMENT" -> {
+                                val merchant = prev.get("merchantName")?.asString
+                                val pDate = prev.get("purchaseDate")?.asLong
+                                if (merchant != null && pDate != null) {
+                                    expenseDao.deleteInstallmentGroup(pDate, merchant)
+                                }
+                            }
                         }
                         lastAction = null
                     }
-                }
-                "CREATE_INSTALLMENT" -> {
-                    val cardId = action.get("cardId")?.asInt ?: return
-                    val merchant = action.get("merchantName")?.asString ?: "Installment"
-                    val amount = action.get("amount")?.asDouble ?: 0.0
-                    val months = action.get("months")?.asInt ?: 1
-                    val rate = action.get("interestRate")?.asDouble ?: 0.0
-
-                    val categoryStr = action.get("category")?.asString?.uppercase()
-                    val category = try {
-                        if (categoryStr != null) ExpenseCategory.valueOf(categoryStr) else inferExpenseCategory(merchant)
-                    } catch (e: Exception) {
-                        inferExpenseCategory(merchant)
-                    }
-
-                    val parsedProfileId = action.get("profileId")?.takeIf { !it.isJsonNull }?.asInt
-                    val mainProfile = profileDao.getMainUserSync()
-                    val targetProfileId = parsedProfileId ?: mainProfile?.id
-
-                    val card = cardDao.getAllCardsSync().find { it.id == cardId } ?: return
-                    val purchaseDate = System.currentTimeMillis()
-
-                    val result = if (rate > 0.0) {
-                        installmentCalculator.calculateWithInterest(amount, months, card.bank)
-                    } else {
-                        installmentCalculator.calculateZeroInterest(amount, months)
-                    }
-
-                    val expenses = result.schedule.map { payment ->
-                        val dueCal = Calendar.getInstance()
-                        dueCal.timeInMillis = purchaseDate
-                        dueCal.add(Calendar.MONTH, payment.month)
-                        dueCal.set(Calendar.DAY_OF_MONTH, card.dueDay)
-
-                        ExpenseEntity(
-                            cardId = cardId,
-                            profileId = targetProfileId,
-                            merchantName = merchant,
-                            category = category,
-                            amount = amount,
-                            purchaseDate = purchaseDate,
-                            isInstallment = true,
-                            totalInstallmentMonths = months,
-                            currentInstallmentMonth = payment.month,
-                            interestType = result.interestType,
-                            monthlyAmortization = payment.amount,
-                            totalInterest = payment.interest,
-                            interestRateMonthly = result.interestRateMonthly,
-                            dueDate = dueCal.timeInMillis
-                        )
-                    }
-                    expenseDao.insertExpenses(expenses)
                 }
             }
         } catch (e: Exception) {

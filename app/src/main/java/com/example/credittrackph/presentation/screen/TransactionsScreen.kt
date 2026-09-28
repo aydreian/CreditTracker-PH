@@ -313,7 +313,7 @@ fun TransactionsScreen(
                         key = { item ->
                             when (item) {
                                 is TransactionItem.Single -> "single_${item.expense.id}"
-                                is TransactionItem.InstallmentGroup -> "group_${item.merchantName}_${item.purchaseDate}"
+                                is TransactionItem.InstallmentGroup -> "group_${item.merchantName}_${item.purchaseDate}_${item.expenses.firstOrNull()?.id ?: 0}"
                             }
                         }
                     ) { item ->
