@@ -35,7 +35,9 @@ class SmsReceiver : BroadcastReceiver() {
             val isBankSms = bankKeywords.any { keyword -> keyword in body }
 
             if (isBankSms) {
-                Log.d("SmsReceiver", "Bank SMS detected: ${smsMessage.messageBody}")
+                if (com.example.credittrackph.BuildConfig.DEBUG) {
+                    Log.d("SmsReceiver", "Bank SMS detected: ${smsMessage.messageBody}")
+                }
                 CoroutineScope(Dispatchers.IO).launch {
                     smsParserUseCase.parseSms(smsMessage.messageBody)
                 }
