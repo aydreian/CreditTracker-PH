@@ -1,5 +1,7 @@
 package com.example.credittrackph.presentation.screen
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
@@ -127,7 +129,7 @@ fun AddEditExpenseScreen(
                 "Jollibee", "McDonald's", "Grab", "Shopee", "Lazada",
                 "Meralco", "Netflix", "SM Dept Store", "National Bookstore", "Watsons"
             )
-            FormSection("Quick-Add 🇵🇭") {
+            FormSection("Quick-Add Common Merchants") {
                 androidx.compose.foundation.layout.FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -224,7 +226,7 @@ fun AddEditExpenseScreen(
             }
 
             // Category
-            FormSection(if (!userManuallySelectedCategory && selectedCategory != ExpenseCategory.OTHER) "Category (AI Auto-detected ✨)" else "Category") {
+            FormSection(if (!userManuallySelectedCategory && selectedCategory != ExpenseCategory.OTHER) "Category (AI Auto-detected)" else "Category") {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     ExpenseCategory.entries.forEach { cat ->
                         FilterChip(
@@ -284,75 +286,87 @@ fun AddEditExpenseScreen(
             }
 
             // Installment options
-            if (isInstallment) {
-                // Months selector
-                FormSection("Number of Months") {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf(3, 6, 9, 12, 24, 36).forEach { months ->
-                            FilterChip(
-                                selected = installmentMonths == months,
-                                onClick = { installmentMonths = months },
-                                label = { Text("${months}x", fontSize = 12.sp) },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = appAccentColor(),
-                                    selectedLabelColor = appOnAccentColor()
+            AnimatedVisibility(
+                visible = isInstallment,
+                enter = fadeIn(tween(250)) + expandVertically(
+                    expandFrom = Alignment.Top,
+                    animationSpec = tween(280, easing = FastOutSlowInEasing)
+                ),
+                exit = fadeOut(tween(180)) + shrinkVertically(
+                    shrinkTowards = Alignment.Top,
+                    animationSpec = tween(200)
+                )
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    // Months selector
+                    FormSection("Number of Months") {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf(3, 6, 9, 12, 24, 36).forEach { months ->
+                                FilterChip(
+                                    selected = installmentMonths == months,
+                                    onClick = { installmentMonths = months },
+                                    label = { Text("${months}x", fontSize = 12.sp) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = appAccentColor(),
+                                        selectedLabelColor = appOnAccentColor()
+                                    )
                                 )
-                            )
+                            }
                         }
                     }
-                }
 
-                // Interest type
-                FormSection("Interest Type") {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        InterestType.entries.filter { it != InterestType.UNCERTAIN }.forEach { type ->
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.clickable { interestType = type }
-                            ) {
-                                RadioButton(
-                                    selected = interestType == type,
-                                    onClick = { interestType = type },
-                                    colors = RadioButtonDefaults.colors(selectedColor = appAccentColor())
-                                )
-                                Spacer(Modifier.width(8.dp))
-                                Column {
-                                    Text(
-                                        when(type) {
-                                            InterestType.ZERO_PERCENT -> "🎉 0% Interest (Promo / Partner Merchant)"
-                                            InterestType.WITH_INTEREST -> "🏦 With Interest (${card.bank.shortCode} ${String.format("%.1f", card.bank.monthlyInterestRate * 100)}%/month)"
-                                            else -> ""
-                                        },
-                                        color = appTextColor(), fontSize = 14.sp
+                    // Interest type
+                    FormSection("Interest Type") {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            InterestType.entries.filter { it != InterestType.UNCERTAIN }.forEach { type ->
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.clickable { interestType = type }
+                                ) {
+                                    RadioButton(
+                                        selected = interestType == type,
+                                        onClick = { interestType = type },
+                                        colors = RadioButtonDefaults.colors(selectedColor = appAccentColor())
                                     )
+                                    Spacer(Modifier.width(8.dp))
+                                    Column {
+                                        Text(
+                                            when (type) {
+                                                InterestType.ZERO_PERCENT -> "0% Interest (Promo / Partner Merchant)"
+                                                InterestType.WITH_INTEREST -> "With Interest (${card.bank.shortCode} ${String.format("%.1f", card.bank.monthlyInterestRate * 100)}%/month)"
+                                                else -> ""
+                                            },
+                                            color = appTextColor(), fontSize = 14.sp
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
-                // Preview
-                if (amountDouble > 0) {
-                    Card(
-                        colors = CardDefaults.cardColors(containerColor = appCardColor()),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text("Payment Preview", color = appPrimaryColor(), fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                            HorizontalDivider(color = appSurfaceColor())
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("🎉 0% option:", color = appTextSubColor(), fontSize = 13.sp)
-                                Text(
-                                    "₱${String.format("%,.2f", monthlyPreview0)}/mo  →  Total: ₱${String.format("%,.2f", amountDouble)}",
-                                    color = appSuccessColor(), fontSize = 13.sp, fontWeight = FontWeight.Medium
-                                )
-                            }
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("🏦 With interest:", color = appTextSubColor(), fontSize = 13.sp)
-                                Text(
-                                    "₱${String.format("%,.2f", monthlyPreviewWithInterest)}/mo  →  Total: ₱${String.format("%,.2f", monthlyPreviewWithInterest * installmentMonths)}",
-                                    color = YellowWarn, fontSize = 13.sp, fontWeight = FontWeight.Medium
-                                )
+                    // Preview
+                    if (amountDouble > 0) {
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = appCardColor()),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text("Payment Preview", color = appPrimaryColor(), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                HorizontalDivider(color = appSurfaceColor())
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Text("0% option:", color = appTextSubColor(), fontSize = 13.sp)
+                                    Text(
+                                        "₱${String.format("%,.2f", monthlyPreview0)}/mo  →  Total: ₱${String.format("%,.2f", amountDouble)}",
+                                        color = appSuccessColor(), fontSize = 13.sp, fontWeight = FontWeight.Medium
+                                    )
+                                }
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Text("With interest:", color = appTextSubColor(), fontSize = 13.sp)
+                                    Text(
+                                        "₱${String.format("%,.2f", monthlyPreviewWithInterest)}/mo  →  Total: ₱${String.format("%,.2f", monthlyPreviewWithInterest * installmentMonths)}",
+                                        color = YellowWarn, fontSize = 13.sp, fontWeight = FontWeight.Medium
+                                    )
+                                }
                             }
                         }
                     }

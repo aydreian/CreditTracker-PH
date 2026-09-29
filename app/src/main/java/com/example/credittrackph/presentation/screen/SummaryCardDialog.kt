@@ -24,6 +24,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.example.credittrackph.data.db.entity.ExpenseEntity
 import com.example.credittrackph.data.model.ExpenseCategory
 import com.example.credittrackph.theme.*
@@ -60,10 +67,23 @@ fun SummaryCardDialog(
         appendLine("Built with ❤️ by aydreian • github.com/aydreian")
     }
 
+    var cardVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { cardVisible = true }
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
+        AnimatedVisibility(
+            visible = cardVisible,
+            enter = fadeIn(tween(260)) + scaleIn(
+                initialScale  = 0.88f,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioLowBouncy,
+                    stiffness    = Spring.StiffnessMediumLow
+                )
+            )
+        ) {
         Card(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
@@ -83,7 +103,7 @@ fun SummaryCardDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        "Monthly Spend Card ✨",
+                        "Monthly Spend Card",
                         color = appTextColor(),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
@@ -126,7 +146,7 @@ fun SummaryCardDialog(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                "CREDITTRACK PH 🇵🇭",
+                                "CREDITTRACK PH",
                                 color = if (LocalIsDarkTheme.current) Emerald400 else Color(0xFFBAE6FD),
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
@@ -222,7 +242,7 @@ fun SummaryCardDialog(
                     Icon(Icons.Default.Share, contentDescription = null, tint = appOnAccentColor())
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        "Share to GCash / Friends / Stories 🚀",
+                        "Share Summary",
                         color = appOnAccentColor(),
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp
@@ -230,5 +250,6 @@ fun SummaryCardDialog(
                 }
             }
         }
+        } // AnimatedVisibility
     }
 }

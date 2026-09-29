@@ -8,6 +8,7 @@ import android.speech.tts.TextToSpeech
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -45,6 +46,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.credittrackph.data.network.GroqMessage
+import com.example.credittrackph.presentation.components.TypingIndicator
 import com.example.credittrackph.presentation.viewmodel.FinancierViewModel
 import com.example.credittrackph.theme.*
 import com.example.credittrackph.util.AudioRecorderHelper
@@ -281,7 +283,7 @@ fun FinancierChatSheet(
 
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            "🐶 FINANCIER",
+                            "FINANCIER",
                             color = appPrimaryColor(),
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Bold,
@@ -352,7 +354,7 @@ fun FinancierChatSheet(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "🐶 Built with ❤️ by aydreian • github.com/aydreian",
+                            "Built with love by aydreian • github.com/aydreian",
                             color = appTextSubColor().copy(alpha = 0.8f),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium
@@ -446,7 +448,7 @@ fun FinancierChatSheet(
                                 }
 
                                 Text(
-                                    "Release or tap to transcribe ✨",
+                                    "Release or tap to transcribe",
                                     color = appTextColor(),
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Medium
@@ -482,7 +484,7 @@ fun FinancierChatSheet(
                                 )
                                 Spacer(Modifier.width(10.dp))
                                 Text(
-                                    "✨ Whisper AI transcribing...",
+                                    "Whisper AI transcribing...",
                                     color = appPrimaryColor(),
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Medium
@@ -493,7 +495,7 @@ fun FinancierChatSheet(
                             OutlinedTextField(
                                 value = inputText,
                                 onValueChange = { inputText = it },
-                                placeholder = { Text("Ask or hold 🎙️ to speak...", color = appTextSubColor().copy(alpha = 0.6f)) },
+                                placeholder = { Text("Ask or hold mic to speak...", color = appTextSubColor().copy(alpha = 0.6f)) },
                                 modifier = Modifier.weight(1f),
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedContainerColor = appSurfaceColor(),
@@ -538,6 +540,43 @@ fun FinancierChatSheet(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            // ── Filipino Quick Suggestion Chips ──
+            val suggestions = listOf(
+                "Magkano na ang utang ko?",
+                "Kailan ang susunod na bayad?",
+                "Tipid tips ngayong buwan",
+                "How much is overdue?",
+                "Show monthly summary"
+            )
+            val visibleMessages = chatState.filter { it.role != "system" }
+            if (visibleMessages.size <= 1) {
+                Row(
+                    modifier = Modifier
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    suggestions.forEach { chip ->
+                        SuggestionChip(
+                            onClick = {
+                                viewModel.sendMessage(chip)
+                            },
+                            label = {
+                                Text(chip, fontSize = 12.sp, maxLines = 1)
+                            },
+                            colors = SuggestionChipDefaults.suggestionChipColors(
+                                containerColor = appSoftSuccessColor(),
+                                labelColor = appPrimaryColor()
+                            ),
+                            border = SuggestionChipDefaults.suggestionChipBorder(
+                                enabled = true,
+                                borderColor = appBorderColor()
+                            )
+                        )
+                    }
+                }
+            }
+
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -546,7 +585,26 @@ fun FinancierChatSheet(
                 contentPadding = PaddingValues(vertical = 16.dp),
                 reverseLayout = true
             ) {
-                val visibleMessages = chatState.filter { it.role != "system" }
+                if (isLoading) {
+                    item(key = "typing_indicator") {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 10.dp),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            Surface(
+                                color = appSoftSuccessColor(),
+                                shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomStart = 4.dp, bottomEnd = 20.dp),
+                                modifier = Modifier.padding(end = 64.dp)
+                            ) {
+                                Box(modifier = Modifier.padding(horizontal = 18.dp, vertical = 14.dp)) {
+                                    TypingIndicator(dotColor = appPrimaryColor())
+                                }
+                            }
+                        }
+                    }
+                }
                 items(visibleMessages.reversed()) { msg ->
                     ChatBubble(
                         message = msg,
@@ -555,18 +613,6 @@ fun FinancierChatSheet(
                     )
                     Spacer(Modifier.height(10.dp))
                 }
-            }
-
-            if (isLoading) {
-                Text(
-                    "*Financier is sniffing around...*",
-                    color = appPrimaryColor(),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier
-                        .padding(bottom = 8.dp)
-                        .align(Alignment.CenterHorizontally)
-                )
             }
         }
     }
