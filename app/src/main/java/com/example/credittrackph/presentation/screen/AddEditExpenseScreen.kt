@@ -93,7 +93,7 @@ fun AddEditExpenseScreen(
             TopAppBar(
                 title = { Text("Add Expense", color = appTextColor(), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = appTextColor()) }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = appTextColor()) }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = appCardColor())
             )

@@ -62,7 +62,7 @@ fun CardDetailScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, null, tint = appTextColor()) }
+                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back", tint = appTextColor()) }
                 },
                 actions = {
                     IconButton(onClick = { onEditCard(card) }) {
@@ -279,7 +279,7 @@ fun ExpenseRow(expense: ExpenseEntity, onMarkPaid: () -> Unit, onDelete: () -> U
 
                     Box {
                         IconButton(onClick = { showMenu = true }, modifier = Modifier.size(24.dp)) {
-                            Icon(Icons.Default.MoreVert, null, tint = appTextSubColor(), modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.MoreVert, "More options", tint = appTextSubColor(), modifier = Modifier.size(16.dp))
                         }
                         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }, modifier = Modifier.background(appCardColor())) {
                             if (!expense.isPaid) {
