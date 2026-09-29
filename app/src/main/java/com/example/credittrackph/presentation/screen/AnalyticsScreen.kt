@@ -89,10 +89,11 @@ fun AnalyticsScreen(
 
     // Smooth one-time entrance animation on open
     val animProgress = remember { Animatable(0f) }
-    LaunchedEffect(Unit) {
+    LaunchedEffect(timeFilter) {
+        animProgress.snapTo(0f)
         animProgress.animateTo(
             targetValue = 1f,
-            animationSpec = tween(durationMillis = 900, easing = FastOutSlowInEasing)
+            animationSpec = tween(durationMillis = 700, easing = FastOutSlowInEasing)
         )
     }
 

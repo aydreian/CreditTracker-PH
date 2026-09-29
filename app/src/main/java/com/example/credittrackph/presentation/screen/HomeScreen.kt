@@ -1,5 +1,7 @@
 package com.example.credittrackph.presentation.screen
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -8,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,13 +25,16 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.credittrackph.data.db.entity.CardEntity
 import com.example.credittrackph.data.db.entity.ExpenseEntity
+import com.example.credittrackph.presentation.components.AnimatedMoneyText
 import com.example.credittrackph.presentation.components.PaymentCalendarView
+import com.example.credittrackph.presentation.components.PulsingDot
 import com.example.credittrackph.presentation.components.getIcon
 import com.example.credittrackph.presentation.viewmodel.CardViewModel
 import com.example.credittrackph.presentation.viewmodel.ExpenseViewModel
 import com.example.credittrackph.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlinx.coroutines.delay
 
 @Composable
 fun HomeScreen(
@@ -59,6 +65,11 @@ fun HomeScreen(
 
     var isBalanceVisible by remember { mutableStateOf(true) }
     var showNotificationsDialog by remember { mutableStateOf(false) }
+    var statsVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(280)
+        statsVisible = true
+    }
 
     if (showNotificationsDialog) {
         AlertDialog(
@@ -82,7 +93,7 @@ fun HomeScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            Text("📡", fontSize = 20.sp)
+                            PulsingDot(color = appPrimaryColor(), size = 10.dp)
                             Column {
                                 Text("SMS Auto-Tracking Active", color = appPrimaryColor(), fontWeight = FontWeight.Bold, fontSize = 12.sp)
                                 Text("Transactions from BDO, BPI, UnionBank, etc. are automatically recognized and recorded.", color = appTextSubColor(), fontSize = 11.sp)
@@ -98,7 +109,10 @@ fun HomeScreen(
                     )
 
                     if (upcomingDues.isEmpty()) {
-                        Text("🎉 No payments due within the next 7 days!", color = appTextSubColor(), fontSize = 12.sp)
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = appSuccessColor(), modifier = Modifier.size(14.dp))
+                            Text("No dues this week — you're on track!", color = appTextSubColor(), fontSize = 12.sp)
+                        }
                     } else {
                         val sdf = SimpleDateFormat("MMM dd", Locale.getDefault())
                         upcomingDues.take(4).forEach { due ->
@@ -137,7 +151,10 @@ fun HomeScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text("🔒 Biometric App Lock", color = appTextColor(), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Icon(Icons.Default.Fingerprint, contentDescription = null, tint = appPrimaryColor(), modifier = Modifier.size(16.dp))
+                                    Text("Biometric App Lock", color = appTextColor(), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                }
                                 Text("Require fingerprint when opening CreditTrack", color = appTextSubColor(), fontSize = 11.sp)
                             }
                             Switch(
@@ -193,6 +210,13 @@ fun HomeScreen(
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium
                 )
+                Text(
+                    getTagalogGreeting(),
+                    fontFamily = SoraFontFamily,
+                    color = appPrimaryColor().copy(alpha = 0.72f),
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Medium
+                )
             }
             
             // Right: Notifications & Theme
@@ -236,6 +260,13 @@ fun HomeScreen(
         Spacer(Modifier.height(24.dp))
 
         // ── Quick Stats Row ──
+        AnimatedVisibility(
+            visible = statsVisible,
+            enter   = fadeIn(tween(420)) + scaleIn(
+                initialScale  = 0.94f,
+                animationSpec = tween(420, easing = FastOutSlowInEasing)
+            )
+        ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -265,6 +296,7 @@ fun HomeScreen(
                 modifier = Modifier.weight(1f)
             )
         }
+    }
 
         // ── Pending SMS Detected Transactions ──
         if (pendingSmsExpenses.isNotEmpty()) {
@@ -279,7 +311,7 @@ fun HomeScreen(
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("📡", fontSize = 18.sp)
+                        PulsingDot(color = appPrimaryColor(), size = 9.dp)
                         Text(
                             "New Bank SMS Detected (${pendingSmsExpenses.size})",
                             color = appPrimaryColor(),
@@ -331,7 +363,10 @@ fun HomeScreen(
                                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                                         enabled = matchedCard != null
                                     ) {
-                                        Text("✓ Add Expense", color = appOnAccentColor(), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            Icon(Icons.Default.Add, null, modifier = Modifier.size(14.dp), tint = appOnAccentColor())
+                                            Text("Add Expense", color = appOnAccentColor(), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                        }
                                     }
                                 }
                             }
@@ -354,7 +389,7 @@ fun HomeScreen(
             ) {
                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("⚠️", fontSize = 18.sp)
+                        Icon(Icons.Default.Savings, contentDescription = null, tint = RedAlert, modifier = Modifier.size(18.dp))
                         Text(
                             "Budget Alert — Tipid Mode!",
                             color = RedAlert,
@@ -387,8 +422,9 @@ fun HomeScreen(
         if (upcomingDues.isNotEmpty()) {
             Spacer(Modifier.height(24.dp))
             HomeSectionHeader(
-                title = "⚠\uFE0F Upcoming Due",
-                trailing = "${upcomingDues.size} items"
+                title = "Upcoming Due",
+                trailing = "${upcomingDues.size} items",
+                titleIcon = Icons.Default.Schedule
             )
             upcomingDues.take(3).forEach { expense ->
                 val swipedBy = allProfiles.find { it.id == expense.profileId }?.name ?: "Unknown"
@@ -431,7 +467,7 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "Built with ❤️ by aydreian • github.com/aydreian",
+                    text = "Built with love by aydreian  •  github.com/aydreian",
                     color = appTextSubColor(),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium
@@ -502,11 +538,11 @@ private fun NetWorthCard(
 
                 Spacer(Modifier.height(8.dp))
 
-                Text(
-                    if (isVisible) "₱%,.2f".format(netAvailable) else "₱ •••••••",
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 32.sp
+                AnimatedMoneyText(
+                    amount    = netAvailable,
+                    isVisible = isVisible,
+                    color     = Color.White,
+                    style     = MoneyDisplayStyle
                 )
 
                 Spacer(Modifier.height(20.dp))
@@ -621,7 +657,8 @@ private fun QuickStatItem(
 private fun HomeSectionHeader(
     title: String,
     trailing: String = "",
-    onTrailingClick: (() -> Unit)? = null
+    onTrailingClick: (() -> Unit)? = null,
+    titleIcon: androidx.compose.ui.graphics.vector.ImageVector? = null
 ) {
     Row(
         modifier = Modifier
@@ -630,7 +667,12 @@ private fun HomeSectionHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(title, color = appTextColor(), fontWeight = FontWeight.Bold, fontSize = 17.sp)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            if (titleIcon != null) {
+                Icon(titleIcon, contentDescription = null, tint = appPrimaryColor(), modifier = Modifier.size(16.dp))
+            }
+            Text(title, color = appTextColor(), fontWeight = FontWeight.Bold, fontSize = 17.sp)
+        }
         if (onTrailingClick != null) {
             Text(
                 trailing,
@@ -721,11 +763,11 @@ private fun UpcomingDueRow(expense: ExpenseEntity, isVisible: Boolean, swipedBy:
                     softWrap = false
                 )
                 val countdownText = when {
-                    daysLeft < 0 -> "Overdue (${-daysLeft}d)"
-                    daysLeft == 0 -> "Due Today ⚡"
-                    daysLeft == 1 -> "Tomorrow ⚡"
-                    daysLeft <= 3 -> "In $daysLeft days ⏳"
-                    else -> "In $daysLeft days"
+                    daysLeft < 0  -> "OVERDUE (${-daysLeft}d)"
+                    daysLeft == 0 -> "Due Today"
+                    daysLeft == 1 -> "Due Tomorrow"
+                    daysLeft <= 3 -> "In $daysLeft days"
+                    else          -> "In $daysLeft days"
                 }
                 Surface(
                     color = urgencyColor.copy(alpha = 0.18f),
@@ -829,5 +871,15 @@ fun getTimeGreeting(): String {
         in 12..17 -> "Afternoon!"
         in 18..21 -> "Evening!"
         else -> "Night!"
+    }
+}
+
+fun getTagalogGreeting(): String {
+    val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+    return when (hour) {
+        in 5..11  -> "Magandang Umaga!"
+        in 12..17 -> "Magandang Tanghali!"
+        in 18..21 -> "Magandang Gabi!"
+        else      -> "Magpahinga ka nang maayos!"
     }
 }

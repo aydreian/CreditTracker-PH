@@ -2,40 +2,49 @@ package com.example.credittrackph.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Primary brand colors - deep emerald/teal premium dark palette
+// ── Brand Palette — Emerald ──
 val Emerald900 = Color(0xFF064E3B)
 val Emerald700 = Color(0xFF047857)
+val Emerald600 = Color(0xFF059669)
 val Emerald500 = Color(0xFF10B981)
 val Emerald400 = Color(0xFF34D399)
 val Emerald300 = Color(0xFF6EE7B7)
 
-// Accent - gold for premium feel
+// ── Accent — Gold ──
 val Gold400 = Color(0xFFFBBF24)
 val Gold300 = Color(0xFFFCD34D)
 
-// Surface colors - deep dark theme
-val Surface950 = Color(0xFF030712)
-val Surface900 = Color(0xFF0F172A)
-val Surface850 = Color(0xFF111827)
-val Surface800 = Color(0xFF1E293B)
-val Surface700 = Color(0xFF334155)
-val Surface600 = Color(0xFF475569)
+// ── Surface Scale — Deep Slate (replaces Midnight Indigo) ──
+val Slate950 = Color(0xFF020617)   // Deepest bg — near-black
+val Slate900 = Color(0xFF0F172A)   // Card / surface base
+val Slate800 = Color(0xFF1E293B)   // Elevated surfaces
+val Slate700 = Color(0xFF334155)   // Borders, dividers
+val Slate600 = Color(0xFF475569)   // Muted elements
+val Slate500 = Color(0xFF64748B)   // Secondary text
 
-// Status colors
-val RedAlert = Color(0xFFEF4444)
-val RedSoft = Color(0xFFFEE2E2)
-val YellowWarn = Color(0xFFF59E0B)
+// Backward-compat aliases (keeps old references compiling during migration)
+val Surface950 = Slate950
+val Surface900 = Slate900
+val Surface850 = Slate900
+val Surface800 = Slate800
+val Surface700 = Slate700
+val Surface600 = Slate600
+
+// ── Status Colors ──
+val RedAlert     = Color(0xFFEF4444)
+val RedSoft      = Color(0xFFFEE2E2)
+val YellowWarn   = Color(0xFFF59E0B)
 val GreenSuccess = Color(0xFF22C55E)
-val GreenSoft = Color(0xFFDCFCE7)
+val GreenSoft    = Color(0xFFDCFCE7)
 
-// Bottom navigation
-val BottomNavSelected = Color(0xFF10B981)
-val BottomNavUnselected = Color(0xFF64748B)
+// ── Navigation ──
+val BottomNavSelected   = Emerald500
+val BottomNavUnselected = Slate500
 
-// Card preset colors
+// ── Card Preset Colors (dark card visuals) ──
 val CardColorPresets = listOf(
     Color(0xFF1E3A5F), // Navy Blue
-    Color(0xFF1A1A2E), // Midnight
+    Color(0xFF0F172A), // Slate Midnight
     Color(0xFF064E3B), // Emerald Dark
     Color(0xFF1E1B4B), // Indigo Dark
     Color(0xFF4A1942), // Purple Dark
@@ -46,46 +55,59 @@ val CardColorPresets = listOf(
     Color(0xFF134E4A), // Teal Dark
 )
 
-@androidx.compose.runtime.Composable
-fun appBackgroundColor(): Color = if (LocalIsDarkTheme.current) Color(0xFF1E1B4B) else Color(0xFFF8FAFC)
+// ── Reactive Color Functions ──
 
 @androidx.compose.runtime.Composable
-fun appSurfaceColor(): Color = if (LocalIsDarkTheme.current) Color(0xFF26225B) else Color(0xFFFFFFFF)
+fun appBackgroundColor(): Color =
+    if (LocalIsDarkTheme.current) Slate950 else Color(0xFFF8FAFC)
 
 @androidx.compose.runtime.Composable
-fun appCardColor(): Color = if (LocalIsDarkTheme.current) Color(0xFF332E74) else Color(0xFFFFFFFF)
+fun appSurfaceColor(): Color =
+    if (LocalIsDarkTheme.current) Slate900 else Color(0xFFFFFFFF)
 
 @androidx.compose.runtime.Composable
-fun appTextColor(): Color = if (LocalIsDarkTheme.current) Color.White else Color(0xFF0F172A)
+fun appCardColor(): Color =
+    if (LocalIsDarkTheme.current) Slate800 else Color(0xFFFFFFFF)
 
 @androidx.compose.runtime.Composable
-fun appTextSubColor(): Color = if (LocalIsDarkTheme.current) Color.White.copy(alpha = 0.72f) else Color(0xFF64748B)
+fun appTextColor(): Color =
+    if (LocalIsDarkTheme.current) Color.White else Color(0xFF0F172A)
 
 @androidx.compose.runtime.Composable
-fun appPrimaryColor(): Color = if (LocalIsDarkTheme.current) Color(0xFF818CF8) else Color(0xFF0284C7)
+fun appTextSubColor(): Color =
+    if (LocalIsDarkTheme.current) Color.White.copy(alpha = 0.55f) else Slate500
 
 @androidx.compose.runtime.Composable
-fun appAccentColor(): Color = if (LocalIsDarkTheme.current) Color(0xFFFF6B6B) else Color(0xFF0EA5E9)
+fun appPrimaryColor(): Color =
+    if (LocalIsDarkTheme.current) Emerald500 else Color(0xFF0284C7)
 
 @androidx.compose.runtime.Composable
-fun appAccentDarkColor(): Color = if (LocalIsDarkTheme.current) Color(0xFF4F46E5) else Color(0xFF0369A1)
+fun appAccentColor(): Color =
+    if (LocalIsDarkTheme.current) Emerald400 else Color(0xFF0EA5E9)
 
 @androidx.compose.runtime.Composable
-fun appSuccessColor(): Color = if (LocalIsDarkTheme.current) GreenSuccess else Color(0xFF0284C7)
+fun appAccentDarkColor(): Color =
+    if (LocalIsDarkTheme.current) Emerald700 else Color(0xFF0369A1)
 
 @androidx.compose.runtime.Composable
-fun appSoftSuccessColor(): Color = if (LocalIsDarkTheme.current) Color(0xFF4F46E5).copy(alpha = 0.25f) else Color(0xFF0284C7).copy(alpha = 0.12f)
+fun appSuccessColor(): Color =
+    if (LocalIsDarkTheme.current) GreenSuccess else Color(0xFF0284C7)
 
 @androidx.compose.runtime.Composable
-fun appFabContainerColor(): Color = if (LocalIsDarkTheme.current) Color(0xFFFF6B6B) else Color(0xFF0284C7)
+fun appSoftSuccessColor(): Color =
+    if (LocalIsDarkTheme.current) Emerald500.copy(alpha = 0.14f) else Color(0xFF0284C7).copy(alpha = 0.10f)
 
 @androidx.compose.runtime.Composable
-fun appBorderColor(): Color = if (LocalIsDarkTheme.current) Color(0xFF433E8E).copy(alpha = 0.4f) else Color(0xFFE2E8F0)
+fun appFabContainerColor(): Color =
+    if (LocalIsDarkTheme.current) Emerald500 else Color(0xFF0284C7)
 
 @androidx.compose.runtime.Composable
-fun appIndicatorGlowColor(): Color = if (LocalIsDarkTheme.current) Color(0xFFFF6B6B).copy(alpha = 0.25f) else Color(0xFF0284C7).copy(alpha = 0.16f)
+fun appBorderColor(): Color =
+    if (LocalIsDarkTheme.current) Slate700.copy(alpha = 0.65f) else Color(0xFFE2E8F0)
+
+@androidx.compose.runtime.Composable
+fun appIndicatorGlowColor(): Color =
+    if (LocalIsDarkTheme.current) Emerald500.copy(alpha = 0.18f) else Color(0xFF0284C7).copy(alpha = 0.14f)
 
 @androidx.compose.runtime.Composable
 fun appOnAccentColor(): Color = Color.White
-
-

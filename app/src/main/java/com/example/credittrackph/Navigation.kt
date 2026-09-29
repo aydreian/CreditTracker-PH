@@ -28,6 +28,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -46,9 +48,9 @@ import kotlinx.coroutines.launch
 
 enum class BottomTab(val label: String, val icon: ImageVector) {
     HOME("Home", Icons.Default.Home),
-    TRANSACTIONS("Transactions", Icons.Default.Receipt),
-    STATISTICS("Statistics", Icons.Default.PieChart),
-    WALLET("Wallet", Icons.Default.AccountBalanceWallet)
+    TRANSACTIONS("Transactions", Icons.Default.ReceiptLong),
+    STATISTICS("Insights", Icons.Default.BarChart),
+    WALLET("Wallet", Icons.Default.Wallet)
 }
 
 // ── Overlay Screen Definitions ──
@@ -417,7 +419,10 @@ fun BottomNavBar(
         // ── Smooth Rotating Center FAB (+ to ×) ──
         val fabRotation by animateFloatAsState(
             targetValue = if (isFabExpanded) 45f else 0f,
-            animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness    = Spring.StiffnessMedium
+            ),
             label = "fabRotation"
         )
 
@@ -446,20 +451,55 @@ fun BottomNavBar(
 
 @Composable
 private fun BottomNavItem(tab: BottomTab, isSelected: Boolean, onClick: () -> Unit) {
+    val haptic = LocalHapticFeedback.current
+    val iconScale by animateFloatAsState(
+        targetValue = if (isSelected) 1.12f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness    = Spring.StiffnessMedium
+        ),
+        label = "nav_icon_scale"
+    )
+
     Column(
         modifier = Modifier
-            .clip(CircleShape)
-            .clickable { onClick() }
-            .padding(8.dp),
+            .clip(RoundedCornerShape(12.dp))
+            .clickable {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onClick()
+            }
+            .padding(horizontal = 8.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         Icon(
             tab.icon,
             contentDescription = tab.label,
-            tint = if (isSelected) appPrimaryColor() else appTextSubColor().copy(alpha = 0.6f),
-            modifier = Modifier.size(24.dp)
+            tint = if (isSelected) appPrimaryColor() else appTextSubColor().copy(alpha = 0.50f),
+            modifier = Modifier
+                .size(22.dp)
+                .graphicsLayer(scaleX = iconScale, scaleY = iconScale)
         )
+        AnimatedVisibility(
+            visible = isSelected,
+            enter = fadeIn(tween(180)) + expandVertically(
+                expandFrom = Alignment.Top,
+                animationSpec = tween(200, easing = FastOutSlowInEasing)
+            ),
+            exit = fadeOut(tween(140)) + shrinkVertically(
+                shrinkTowards = Alignment.Top,
+                animationSpec = tween(160)
+            )
+        ) {
+            Text(
+                text       = tab.label,
+                fontSize   = 9.sp,
+                fontWeight = FontWeight.SemiBold,
+                color      = appPrimaryColor(),
+                maxLines   = 1,
+                fontFamily = com.example.credittrackph.theme.SoraFontFamily
+            )
+        }
     }
 }
 
@@ -502,7 +542,7 @@ fun FabMenuOverlay(
                         slideInVertically(initialOffsetY = { 80 }, animationSpec = tween(250, delayMillis = 100))
             ) {
                 FabMenuItem(
-                    icon = Icons.Default.PersonAdd,
+                    icon = Icons.Default.GroupAdd,
                     label = "Add Profile",
                     onClick = onAddProfile
                 )
@@ -528,7 +568,7 @@ fun FabMenuOverlay(
                         slideInVertically(initialOffsetY = { 80 }, animationSpec = tween(250))
             ) {
                 FabMenuItem(
-                    icon = Icons.Default.Receipt,
+                    icon = Icons.Default.ReceiptLong,
                     label = "Add Transaction",
                     onClick = onAddTransaction
                 )

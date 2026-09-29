@@ -27,6 +27,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.credittrackph.data.db.entity.ExpenseEntity
 import com.example.credittrackph.presentation.viewmodel.ExpenseViewModel
 import com.example.credittrackph.presentation.components.getIcon
+import com.example.credittrackph.presentation.components.CategoryChip
 import com.example.credittrackph.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -212,7 +213,12 @@ fun TransactionsScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text("👤", fontSize = 14.sp)
+                            Icon(
+                                Icons.Default.Person,
+                                contentDescription = null,
+                                tint = appTextSubColor(),
+                                modifier = Modifier.size(16.dp)
+                            )
                             Text(
                                 selectedProfileName,
                                 color = appTextColor(),
@@ -278,7 +284,12 @@ fun TransactionsScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("📋", fontSize = 48.sp)
+                    Icon(
+                        Icons.Default.List,
+                        contentDescription = null,
+                        tint = appTextSubColor(),
+                        modifier = Modifier.size(52.dp)
+                    )
                     Spacer(Modifier.height(12.dp))
                     Text(
                         "No transactions found",
@@ -502,6 +513,7 @@ private fun TransactionRow(
 ) {
     val now = System.currentTimeMillis()
     val daysLeft = ((expense.dueDate - now) / (24 * 60 * 60 * 1000L)).toInt()
+    val sdf = remember { java.text.SimpleDateFormat("MMM dd", java.util.Locale.getDefault()) }
 
     Card(
         modifier = Modifier
@@ -546,8 +558,9 @@ private fun TransactionRow(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
+                    CategoryChip(category = expense.category)
                     Text(
-                        expense.category.displayName,
+                        sdf.format(java.util.Date(expense.purchaseDate)),
                         color = appTextSubColor(),
                         fontSize = 11.sp,
                         maxLines = 1,
@@ -585,7 +598,7 @@ private fun TransactionRow(
                     modifier = Modifier.clickable { onTogglePaid() }
                 ) {
                     Text(
-                        text = if (expense.isPaid) "✓ Paid (undo)" else if (daysLeft < 0) "Overdue • Pay" else "Due in $daysLeft d • Pay",
+                        text = if (expense.isPaid) "Bayad na (undo)" else if (daysLeft < 0) "Overdue • Pay" else "Due in $daysLeft d • Pay",
                         color = if (expense.isPaid) appSuccessColor() else if (daysLeft < 0) RedAlert else appTextSubColor(),
                         fontSize = 10.sp,
                         fontWeight = if (expense.isPaid) FontWeight.Bold else FontWeight.Normal,
@@ -804,7 +817,7 @@ private fun GroupedInstallmentRow(
                                         .clickable { onToggleExpensePaid(expense.id, expense.isPaid) }
                                 ) {
                                     Text(
-                                        text = if (expense.isPaid) "✓ Paid" else if (daysLeft < 0) "Overdue" else "Due in $daysLeft d",
+                                        text = if (expense.isPaid) "Bayad na" else if (daysLeft < 0) "Overdue" else "Due in $daysLeft d",
                                         color = if (expense.isPaid) appSuccessColor() else if (daysLeft < 0) RedAlert else appTextSubColor(),
                                         fontSize = 10.sp,
                                         fontWeight = if (expense.isPaid) FontWeight.Bold else FontWeight.Normal,
@@ -840,19 +853,30 @@ private fun GroupedInstallmentRow(
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                             ) {
                                 Text(
-                                    "✓ Pay Off All ($remainingCount mos)",
+                                "Pay Off All ($remainingCount mos)",
                                     color = appOnAccentColor(),
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
                         } else {
-                            Text(
-                                "🎉 Fully Paid Early!",
-                                color = appSuccessColor(),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    tint = appSuccessColor(),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    "Fully Paid Early!",
+                                    color = appSuccessColor(),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
 
                         TextButton(

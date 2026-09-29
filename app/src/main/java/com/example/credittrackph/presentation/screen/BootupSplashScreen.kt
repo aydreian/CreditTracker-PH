@@ -51,7 +51,7 @@ fun BootupSplashScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF1E1B4B)), // Midnight Indigo from Figma
+            .background(Color(0xFF020617)), // Slate950 — matches new dark theme background
         contentAlignment = Alignment.Center
     ) {
         Column(

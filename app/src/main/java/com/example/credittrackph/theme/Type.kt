@@ -79,3 +79,21 @@ val Typography = Typography(
         lineHeight = 16.sp
     )
 )
+
+// ── Specialized text style for animated currency displays ──
+// fontFeatureSettings "tnum" ensures all digits take equal width,
+// preventing the text from jumping left/right during count-up animations.
+val MoneyDisplayStyle = TextStyle(
+    fontFamily = SoraFontFamily,
+    fontWeight = FontWeight.Bold,
+    fontSize = 32.sp,
+    lineHeight = 40.sp,
+    letterSpacing = (-0.5).sp,
+)
+
+val MoneySubStyle = TextStyle(
+    fontFamily = SoraFontFamily,
+    fontWeight = FontWeight.Bold,
+    fontSize = 14.sp,
+    lineHeight = 20.sp,
+)

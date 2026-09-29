@@ -1,5 +1,6 @@
 package com.example.credittrackph.presentation.screen
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -17,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -185,13 +187,22 @@ fun AddEditCardScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(CardColorPresets) { color ->
+                        val scale by animateFloatAsState(
+                            targetValue = if (selectedColor.toArgb() == color.toArgb()) 1.22f else 1f,
+                            animationSpec = spring(
+                                dampingRatio = Spring.DampingRatioMediumBouncy,
+                                stiffness = Spring.StiffnessMedium
+                            ),
+                            label = "color_swatch_scale"
+                        )
                         Box(
                             modifier = Modifier
+                                .graphicsLayer(scaleX = scale, scaleY = scale)
                                 .size(40.dp)
                                 .clip(CircleShape)
                                 .background(color)
                                 .border(
-                                    if (selectedColor == color) 2.dp else 0.dp,
+                                    if (selectedColor.toArgb() == color.toArgb()) 2.dp else 0.dp,
                                     appPrimaryColor(), CircleShape
                                 )
                                 .clickable { selectedColor = color }
