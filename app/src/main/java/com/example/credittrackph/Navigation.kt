@@ -44,6 +44,10 @@ import com.example.credittrackph.presentation.viewmodel.ProfileViewModel
 import com.example.credittrackph.theme.*
 import kotlinx.coroutines.launch
 
+// ── Bottom Nav Dimensions ──
+private val BottomNavHeight = 72.dp
+private val BottomNavVerticalPadding = 20.dp
+
 // ── Bottom Tab Definitions ──
 
 enum class BottomTab(val label: String, val icon: ImageVector) {
@@ -98,9 +102,7 @@ fun MainNavigation(
 
     var showSplash by remember { mutableStateOf(true) }
 
-    val bottomNavHeight = 72.dp
-    val bottomNavVerticalPadding = 20.dp
-    val bottomNavPadding = bottomNavHeight + (bottomNavVerticalPadding * 2) + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val bottomNavPadding = BottomNavHeight + (BottomNavVerticalPadding * 2) + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
     if (!showSplash && isMainUserSetupRequired) {
         MainUserSetupDialog(
@@ -294,9 +296,9 @@ fun BottomNavBar(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 20.dp)
-            .height(72.dp)
-            .navigationBarsPadding(),
+            .navigationBarsPadding()
+            .padding(horizontal = 24.dp, vertical = BottomNavVerticalPadding)
+            .height(BottomNavHeight),
         contentAlignment = Alignment.Center
     ) {
         // ── Floating Frosted Glass Background with touch/drag tracking ──

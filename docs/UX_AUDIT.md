@@ -12,10 +12,10 @@
 * **Screen/Area:** Home, Transactions, Statistics, Wallet
 * **Severity:** ❗️⚠️ Medium
 * **Description:** Potential collision between status bar and content due to unverified insets.
-* **Evidence:** Unverified.
+* **Evidence:** Unverified candidate.
 
 ### Finding: Money truncation
 * **Screen/Area:** Unknown
 * **Severity:** ‼️ Severe
 * **Description:** Monetary values might truncate under layout constraints.
-* **Evidence:** Unverified.
+* **Evidence:** Unverified candidate.
