@@ -98,6 +98,10 @@ fun MainNavigation(
 
     var showSplash by remember { mutableStateOf(true) }
 
+    val bottomNavHeight = 72.dp
+    val bottomNavVerticalPadding = 20.dp
+    val bottomNavPadding = bottomNavHeight + (bottomNavVerticalPadding * 2) + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+
     if (!showSplash && isMainUserSetupRequired) {
         MainUserSetupDialog(
             onNameSubmitted = { name ->
@@ -127,6 +131,7 @@ fun MainNavigation(
         ) { page ->
             when (page) {
                 0 -> HomeScreen(
+                    bottomPadding = bottomNavPadding,
                     onViewAllTransactions = {
                         coroutineScope.launch { pagerState.animateScrollToPage(1) }
                     },
@@ -140,9 +145,10 @@ fun MainNavigation(
                     isBiometricEnabled = isBiometricEnabled,
                     onToggleBiometric = onToggleBiometric
                 )
-                1 -> TransactionsScreen()
-                2 -> AnalyticsScreen()
+                1 -> TransactionsScreen(bottomPadding = bottomNavPadding)
+                2 -> AnalyticsScreen(bottomPadding = bottomNavPadding)
                 3 -> WalletScreen(
+                    bottomPadding = bottomNavPadding,
                     onCardClick = { card -> pushScreen(Screen.CardDetail(card)) },
                     onAddCard = { pushScreen(Screen.AddCard) }
                 )

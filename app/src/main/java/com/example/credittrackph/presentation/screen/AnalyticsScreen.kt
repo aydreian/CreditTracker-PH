@@ -21,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -52,6 +53,7 @@ data class CategoryStat(
 
 @Composable
 fun AnalyticsScreen(
+    bottomPadding: Dp = 0.dp,
     expenseViewModel: ExpenseViewModel = hiltViewModel()
 ) {
     val isDark = LocalIsDarkTheme.current
@@ -376,6 +378,6 @@ fun AnalyticsScreen(
         }
     }
 
-        Spacer(Modifier.height(80.dp))
+        Spacer(Modifier.height(bottomPadding))
     }
 }
