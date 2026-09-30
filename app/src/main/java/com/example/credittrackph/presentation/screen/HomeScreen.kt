@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -38,6 +39,7 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun HomeScreen(
+    bottomPadding: Dp = 0.dp,
     onViewAllTransactions: () -> Unit,
     onViewWallet: () -> Unit,
     onCardClick: (CardEntity) -> Unit,
@@ -475,7 +477,7 @@ fun HomeScreen(
             }
         }
 
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(bottomPadding))
     }
 }
 

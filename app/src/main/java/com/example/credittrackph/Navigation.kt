@@ -44,6 +44,10 @@ import com.example.credittrackph.presentation.viewmodel.ProfileViewModel
 import com.example.credittrackph.theme.*
 import kotlinx.coroutines.launch
 
+// ── Bottom Nav Dimensions ──
+private val BottomNavHeight = 72.dp
+private val BottomNavVerticalPadding = 20.dp
+
 // ── Bottom Tab Definitions ──
 
 enum class BottomTab(val label: String, val icon: ImageVector) {
@@ -98,6 +102,8 @@ fun MainNavigation(
 
     var showSplash by remember { mutableStateOf(true) }
 
+    val bottomNavPadding = BottomNavHeight + (BottomNavVerticalPadding * 2) + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+
     if (!showSplash && isMainUserSetupRequired) {
         MainUserSetupDialog(
             onNameSubmitted = { name ->
@@ -127,6 +133,7 @@ fun MainNavigation(
         ) { page ->
             when (page) {
                 0 -> HomeScreen(
+                    bottomPadding = bottomNavPadding,
                     onViewAllTransactions = {
                         coroutineScope.launch { pagerState.animateScrollToPage(1) }
                     },
@@ -140,9 +147,10 @@ fun MainNavigation(
                     isBiometricEnabled = isBiometricEnabled,
                     onToggleBiometric = onToggleBiometric
                 )
-                1 -> TransactionsScreen()
-                2 -> AnalyticsScreen()
+                1 -> TransactionsScreen(bottomPadding = bottomNavPadding)
+                2 -> AnalyticsScreen(bottomPadding = bottomNavPadding)
                 3 -> WalletScreen(
+                    bottomPadding = bottomNavPadding,
                     onCardClick = { card -> pushScreen(Screen.CardDetail(card)) },
                     onAddCard = { pushScreen(Screen.AddCard) }
                 )
@@ -288,9 +296,9 @@ fun BottomNavBar(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 20.dp)
-            .height(72.dp)
-            .navigationBarsPadding(),
+            .navigationBarsPadding()
+            .padding(horizontal = 24.dp, vertical = BottomNavVerticalPadding)
+            .height(BottomNavHeight),
         contentAlignment = Alignment.Center
     ) {
         // ── Floating Frosted Glass Background with touch/drag tracking ──

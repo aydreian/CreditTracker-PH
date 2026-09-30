@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -30,6 +31,7 @@ import com.example.credittrackph.theme.*
 
 @Composable
 fun WalletScreen(
+    bottomPadding: Dp = 0.dp,
     onCardClick: (CardEntity) -> Unit,
     onAddCard: () -> Unit,
     cardViewModel: CardViewModel = hiltViewModel()
@@ -120,7 +122,7 @@ fun WalletScreen(
                     .padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(bottom = 80.dp)
+                contentPadding = PaddingValues(bottom = bottomPadding)
             ) {
                 items(cards, key = { it.id }) { card ->
                     WalletCardItem(

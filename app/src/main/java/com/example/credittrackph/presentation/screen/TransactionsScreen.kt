@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -48,6 +49,7 @@ sealed class TransactionItem {
 
 @Composable
 fun TransactionsScreen(
+    bottomPadding: Dp = 0.dp,
     expenseViewModel: ExpenseViewModel = hiltViewModel(),
     profileViewModel: com.example.credittrackph.presentation.viewmodel.ProfileViewModel = hiltViewModel()
 ) {
@@ -307,7 +309,7 @@ fun TransactionsScreen(
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 96.dp)
+                contentPadding = PaddingValues(bottom = bottomPadding)
             ) {
                 groupedByDate.forEach { (dateLabel, items) ->
                     item(key = "header_$dateLabel") {
