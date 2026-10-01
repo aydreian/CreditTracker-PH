@@ -19,3 +19,9 @@
 * **Severity:** ‼️ Severe
 * **Description:** Monetary values might truncate under layout constraints.
 * **Evidence:** Unverified candidate.
+
+### Finding: Missing contentDescription on icon-only interactive controls
+* **Screen/Area:** Global
+* **Severity:** ❗️⚠️ Medium
+* **Description:** Several `IconButton` and custom icon-only interactive components lack meaningful `contentDescription` properties.
+* **Evidence:** Verified via codebase inspection. However, most `Icon` elements with `contentDescription = null` are accompanied by adjacent text labels or aren't independently interactive, which is standard accessibility practice to avoid TalkBack spam. Audit revealed no *interactive, icon-only* elements without descriptions. `IconButton` usages either have descriptions or are grouped with text in a way where adding a description to the icon would cause TalkBack spam.
