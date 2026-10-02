@@ -1,6 +1,10 @@
-## 2026-09-30 - Add Content Descriptions to Icon-Only Buttons
-**Learning:** Found several icon-only buttons (`IconButton`s) in Compose UI where `contentDescription` was explicitly set to `null`, making them inaccessible to screen readers.
-**Action:** Always provide meaningful `contentDescription` (e.g., "Back", "More options") for standalone icons or icon buttons to ensure full accessibility support.
+## 2026-09-30 - Contextual Content Descriptions for Icons
+**Learning:** Setting `contentDescription = null` for all icons is an accessibility anti-pattern, but universally setting strings for all icons also causes TalkBack spam.
+**Action:** Apply contextual rules for icons:
+- Interactive icon-only control with no meaningful accessibility description → add it.
+- Interactive icon-only control with an appropriate description → leave unchanged.
+- Icon adjacent to identical visible text → use `contentDescription = null`.
+- Decorative icon → use `contentDescription = null`.
 
 ## 2026-09-30 - Bottom Navigation Inset/Overlap Pattern
 **Learning:** When using a custom overlaid/floating bottom navigation bar (e.g., in a `Box` above a `HorizontalPager`), using arbitrary padding or standard `WindowInsets` on individual screens causes overlap or unreachable content.
