@@ -23,7 +23,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.credittrackph.data.db.entity.CardEntity
-import com.example.credittrackph.data.model.CardType
 import com.example.credittrackph.presentation.components.BankLogo
 import com.example.credittrackph.presentation.components.CardNetworkLogo
 import com.example.credittrackph.presentation.viewmodel.CardViewModel
