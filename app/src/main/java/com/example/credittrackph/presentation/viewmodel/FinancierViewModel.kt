@@ -27,7 +27,6 @@ import retrofit2.HttpException
 import java.io.File
 import java.net.UnknownHostException
 import java.text.SimpleDateFormat
-import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
