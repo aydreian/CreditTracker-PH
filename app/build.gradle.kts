@@ -8,6 +8,12 @@ plugins {
   alias(libs.plugins.ksp)
 }
 
+val localProps = Properties()
+val localPropsFile = rootProject.file("local.properties")
+if (localPropsFile.exists()) {
+    localProps.load(localPropsFile.inputStream())
+}
+
 android {
     namespace = "com.example.credittrackph"
     compileSdk = 36
@@ -18,11 +24,6 @@ android {
         versionCode = 1
         versionName = "1.0"
         
-        val localProps = Properties()
-        val localPropsFile = rootProject.file("local.properties")
-        if (localPropsFile.exists()) {
-            localProps.load(localPropsFile.inputStream())
-        }
         val groqApiKey = localProps.getProperty("groq.api.key") ?: System.getenv("GROQ_API_KEY") ?: "YOUR_GROQ_API_KEY_HERE"
         buildConfigField("String", "GROQ_API_KEY", "\"$groqApiKey\"")
 
@@ -37,9 +38,9 @@ android {
             val keystoreFile = file("release.keystore")
             if (keystoreFile.exists()) {
                 storeFile = keystoreFile
-                storePassword = "password"
-                keyAlias = "release_key"
-                keyPassword = "password"
+                storePassword = localProps.getProperty("RELEASE_STORE_PASSWORD") ?: System.getenv("RELEASE_STORE_PASSWORD")
+                keyAlias = localProps.getProperty("RELEASE_KEY_ALIAS") ?: System.getenv("RELEASE_KEY_ALIAS")
+                keyPassword = localProps.getProperty("RELEASE_KEY_PASSWORD") ?: System.getenv("RELEASE_KEY_PASSWORD")
             } else {
                 initWith(getByName("debug"))
             }
