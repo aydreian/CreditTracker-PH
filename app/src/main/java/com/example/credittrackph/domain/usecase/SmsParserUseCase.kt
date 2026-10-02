@@ -2,7 +2,6 @@ package com.example.credittrackph.domain.usecase
 
 import android.util.Log
 import com.example.credittrackph.data.db.entity.ExpenseEntity
-import com.example.credittrackph.data.model.ExpenseCategory
 import com.example.credittrackph.data.model.ExpenseSource
 import com.example.credittrackph.data.model.InterestType
 import com.example.credittrackph.data.model.inferExpenseCategory
