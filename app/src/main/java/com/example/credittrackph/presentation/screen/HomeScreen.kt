@@ -761,8 +761,7 @@ private fun UpcomingDueRow(expense: ExpenseEntity, isVisible: Boolean, swipedBy:
                     if (isVisible) "₱%,.2f".format(expense.monthlyAmortization.takeIf { it.isFinite() } ?: 0.0) else "••••",
                     color = appTextColor(),
                     fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    softWrap = false
+                    fontSize = 14.sp
                 )
                 val countdownText = when {
                     daysLeft < 0  -> "OVERDUE (${-daysLeft}d)"
@@ -857,8 +856,7 @@ private fun RecentTransactionRow(expense: ExpenseEntity, isVisible: Boolean, swi
                 if (isVisible) "₱%,.2f".format(expense.monthlyAmortization.takeIf { it.isFinite() } ?: 0.0) else "••••",
                 color = if (expense.isPaid) appSuccessColor() else appTextColor(),
                 fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
-                softWrap = false
+                fontSize = 14.sp
             )
         }
     }
